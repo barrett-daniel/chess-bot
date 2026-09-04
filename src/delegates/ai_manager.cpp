@@ -1,0 +1,134 @@
+#include "ai_manager.hpp"
+#include "../pieces/pieces.hpp"
+#include "../utility/logger.hpp"
+
+#include <cstdlib>
+#include <ctime>
+#include <unordered_map>
+
+#define COUNT_BITS(expr) __builtin_popcountll(expr)
+
+constexpr Bitboard CENTRE(0x1818000000);
+constexpr Bitboard EXTENDED_CENTRE(0x3c3c3c3c0000);
+constexpr Bitboard KING_SAFETY(0xe7000000000000e7);
+
+constexpr int CENTRE_PAWN_VAL = 25;
+constexpr int EXTENDED_CENTRE_PAWN_VAL = 15;
+constexpr int KING_SAFETY_VAL = 30;
+
+std::unordered_map<PieceType, int> PIECE_MAP = {
+    {PieceType::PAWN, 100},
+    {PieceType::KNIGHT, 300},
+    {PieceType::BISHOP, 320},
+    {PieceType::ROOK, 500},
+    {PieceType::QUEEN, 900}
+};
+
+AIManager::AIManager(Colour ai_colour)
+  : ai_colour(ai_colour),
+    calls(0)
+{
+    LOG_TRACE;
+    std::srand(std::time(nullptr));
+}
+
+Move AIManager::get_move(BoardManager& board_manager, int depth) {
+    LOG_TRACE;
+
+    calls = 0;
+    BoardState& bs = board_manager.get_bs();
+    std::vector<Move> moves = get_moves(bs.turn, bs);
+    std::vector<Move> valid_moves = board_manager.get_legal_moves(moves);
+
+    Move best = valid_moves.front();
+    int highest_score = INT_MIN;
+
+    for(Move move : valid_moves) {
+        board_manager.make_move(move);
+        int score = min_max(board_manager, depth - 1, false, INT_MIN, INT_MAX);
+        if(score > highest_score) {
+            highest_score = score;
+            best = move;
+        }
+        board_manager.undo_move();
+    }
+    return best;
+}
+
+int AIManager::min_max(BoardManager& board_manager, int depth, bool is_maximising,  int alpha, int beta) {
+    LOG_TRACE;
+    BoardState& bs = board_manager.get_bs();
+
+    if(depth == 0) return eval_board(bs);
+
+    std::vector<Move> moves = get_moves(bs.turn, bs);
+    std::vector<Move> valid_moves = board_manager.get_legal_moves(moves);
+
+    if (valid_moves.empty()) {
+        if (board_manager.is_in_check(bs.turn))return bs.turn == ai_colour ? INT_MIN : INT_MAX; // checkmate
+        else return 0; // stalemate
+    }
+
+    int best_score = is_maximising ? INT_MIN : INT_MAX;
+    for (Move move : valid_moves) {
+        board_manager.make_move(move);
+        int score = min_max(board_manager, depth - 1, !is_maximising, alpha, beta);
+
+        if (is_maximising) {
+            best_score = std::max(best_score, score);
+            alpha = std::max(alpha, score);
+        } else {
+            best_score = std::min(best_score, score);
+            beta = std::min(beta, score);
+        }
+
+        board_manager.undo_move();
+
+        if (beta <= alpha) break;
+    }
+
+    calls++;
+    return best_score;
+}
+
+// simple score evaluator based upon how many pieces are on the board
+// and what their associated value is
+int AIManager::eval_board(BoardState& bs) {
+    int score = 0;
+
+    // count pieces
+    auto bbs = bs.piece_bbs();
+    for(int i = 0; i < NUM_PIECE_BBS; i++) {
+        Bitboard bb    = bbs[i];
+
+        // calculate what type of board is being referenced and how the score
+        // should be multiplied so that BLACK decreases the score, WHITE
+        // increases the score.
+        PieceType bb_type = static_cast<PieceType>(i % (NUM_PIECE_BBS / 2));
+        int score_multiplier = i < NUM_PIECE_BBS / 2 ? 1 : -1;
+
+        // calculate the score per piece and increment the score counter for
+        // each piece
+        int score_per_piece = PIECE_MAP[bb_type] * score_multiplier;
+        while(bb) {
+            pop_lsb(bb);
+            score += score_per_piece;
+        }
+    }
+
+    Colour side = bs.turn;
+
+    // count centre pawns
+    Bitboard& own_pawns   = bs.get_bb(side,  PieceType::PAWN);
+    Bitboard& enemy_pawns = bs.get_bb(!side, PieceType::PAWN);
+    score += (COUNT_BITS(own_pawns & CENTRE) - COUNT_BITS(enemy_pawns & CENTRE)) * CENTRE_PAWN_VAL;
+    score += (COUNT_BITS(own_pawns & EXTENDED_CENTRE) - COUNT_BITS(enemy_pawns & EXTENDED_CENTRE)) * EXTENDED_CENTRE_PAWN_VAL;
+
+    // check king safety
+    Bitboard& own_king   = bs.get_bb(side,  PieceType::KING);
+    Bitboard& enemy_king = bs.get_bb(!side, PieceType::KING);
+    score += (COUNT_BITS(own_king & KING_SAFETY) - COUNT_BITS(enemy_king & KING_SAFETY) * KING_SAFETY_VAL);
+
+
+    return ai_colour == Colour::WHITE ? score : -score;;
+}
