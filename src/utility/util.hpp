@@ -6,6 +6,8 @@
 #include <sstream>
 #include <cstdlib>
 #include <bitset>
+#include <cstdint>
+#include <vector>
 
 #define ASSERT(expr, msg) \
     if (!(expr)) { \

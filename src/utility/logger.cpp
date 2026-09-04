@@ -1,5 +1,7 @@
 #include "logger.hpp"
 
+#include <chrono>
+
 int Logger::counter = 0;
 std::ofstream Logger::out("log.txt");
 bool Logger::on = false;

@@ -1,5 +1,7 @@
 #pragma once
 
+#include <stack>
+
 #include "../utility/util.hpp"
 #include "move_generator.hpp"
 
