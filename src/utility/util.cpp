@@ -1,6 +1,8 @@
 #include "util.hpp"
 #include "logger.hpp"
 
+// precomputed bitboards of: for the given index (which is a square on the board), 1 if a piece of the
+// given type is able to attack the square index, 0 if not.
 Bitboard KNIGHT_ATTACKS[64] = {0};
 Bitboard PAWN_ATTACKS_W[64] = {0};
 Bitboard PAWN_ATTACKS_B[64] = {0};
