@@ -13,6 +13,12 @@ inline Bitboard shift_fwd(bool is_white, Bitboard bb, uint8_t val) {
     return bb << val;
 }
 
+inline Bitboard shift_bwd(bool is_white, Bitboard bb, uint8_t val) {
+    if(is_white) return bb << val;
+
+    return bb >> val;
+}
+
 inline void get_diag_shifts(bool is_white, uint8_t *l, uint8_t *r) {
     *l = BOARD_SIZE + (is_white ? 1 : -1);
     *r = BOARD_SIZE - (is_white ? 1 : -1);
@@ -25,8 +31,8 @@ void init_pawn_attacks(bool is_white) {
     for (int sq = 0; sq < 64; sq++) {
         Bitboard from_bb = 1ULL << sq;
 
-        Bitboard captures_l = shift_fwd(is_white, from_bb, diag_l_shift) & ~FILE_H;
-        Bitboard captures_r = shift_fwd(is_white, from_bb, diag_r_shift) & ~FILE_A;
+        Bitboard captures_l = shift_bwd(is_white, from_bb, diag_l_shift) & ~FILE_H;
+        Bitboard captures_r = shift_bwd(is_white, from_bb, diag_r_shift) & ~FILE_A;
         Bitboard attacks = captures_l | captures_r;
 
         is_white ? PAWN_ATTACKS_W[sq] = attacks : PAWN_ATTACKS_B[sq] = attacks;
