@@ -25,6 +25,10 @@ std::string move_to_str(const Move& m) {
 }
 
 TEST_SUITE("PERFT") {
+    void before_each() {
+        initalise_attack_arrays();
+    }
+
     uint64_t perft(BoardManager& bm, int depth) {
         std::vector<Move> moves = get_moves(bm.get_bs().turn, bm.get_bs());
         std::vector<Move> legal_moves = bm.get_legal_moves(moves);
@@ -68,8 +72,12 @@ TEST_SUITE("PERFT") {
      * necessary moves in order, then calling divide.
      */
     TEST_CASE("Util Check") {
+        before_each();
         BoardManager bm = BoardManager(START_FEN);
-        divide(bm, 4);
+        bm.make_move(Move(B1, C3, KNIGHT));
+        bm.make_move(Move(E7, E5, PAWN));
+        bm.make_move(Move(C3, D5, KNIGHT));
+        divide(bm, 1);
     }
 
     /**
@@ -80,6 +88,7 @@ TEST_SUITE("PERFT") {
      * greater depth.
      */
     TEST_CASE("Possible Move Count") {
+        before_each();
         uint64_t expected[] = {20, 400, 8902, 197281, 4865609, 119060324, 3195901860, 84998978956, 2439530234167, 69352859712417};
 
         int d = GENERATE(1, 2, 3, 4, 5);
