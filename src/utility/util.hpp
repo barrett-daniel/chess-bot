@@ -20,12 +20,12 @@
         std::abort(); \
     }
 
-#ifdef DEBUG
-    const int FPS = 5;
-    constexpr int AI_BASE_DEPTH = 3;
-#else
+#ifdef NDEBUG
     const int FPS = 30;
     constexpr int AI_BASE_DEPTH = 5;
+#else
+    const int FPS = 5;
+    constexpr int AI_BASE_DEPTH = 3;
 #endif
 
 // FEN
