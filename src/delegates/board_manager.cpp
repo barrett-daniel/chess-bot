@@ -95,7 +95,7 @@ void BoardManager::make_move(const Move& move) {
 
         // en-passant capture
         if(move.is_en_passant) {
-            Bitboard enemy_pawns = bs.get_bb(!side, PieceType::PAWN);
+            Bitboard& enemy_pawns = bs.get_bb(!side, PieceType::PAWN);
             clear_bit(enemy_pawns, move.to - forward);
         }
 
@@ -116,11 +116,11 @@ void BoardManager::make_move(const Move& move) {
     if(move.q_castle) [[unlikely]] process_q_castle(side);
     if(move.k_castle) [[unlikely]] process_k_castle(side);
     update_castling_rights(move.from);
-
-    bs.pinned_sqs = calc_pinned_sqs();
+    update_castling_rights(move.to);
 
     update_poly_bbs();
     bs.turn = !bs.turn;
+    bs.pinned_sqs = calc_pinned_sqs();
     LOG("Alternating turn, turn is now: " + to_string(bs.turn));
 }
 
@@ -131,23 +131,25 @@ void BoardManager::undo_move() {
     history.pop();
 }
 
-void inline BoardManager::update_castling_rights(int move_from) {
+void inline BoardManager::update_castling_rights(int move_pos) {
+    // updating white castling rights
     if(bs.castling_rights & W_QUEEN_CASTLE_MASK || bs.castling_rights & W_KING_CASTLE_MASK) {
-        if(move_from == W_KING_START_POS) [[unlikely]] {
+        if(move_pos == W_KING_START_POS) [[unlikely]] {
             bs.castling_rights &= ~W_QUEEN_CASTLE_MASK;
             bs.castling_rights &= ~W_KING_CASTLE_MASK;
         }
-        if(move_from == W_QUEEN_ROOK_START_POS) [[unlikely]] bs.castling_rights &= ~W_QUEEN_CASTLE_MASK;
-        if(move_from == W_KING_ROOK_START_POS)  [[unlikely]] bs.castling_rights &= ~W_KING_CASTLE_MASK;
+        if(move_pos == W_QUEEN_ROOK_START_POS) [[unlikely]] bs.castling_rights &= ~W_QUEEN_CASTLE_MASK;
+        if(move_pos == W_KING_ROOK_START_POS)  [[unlikely]] bs.castling_rights &= ~W_KING_CASTLE_MASK;
     }
 
+    // update black castling rights
     if(bs.castling_rights & B_QUEEN_CASTLE_MASK || bs.castling_rights & B_KING_CASTLE_MASK) {
-        if(move_from == B_KING_START_POS) [[unlikely]] {
+        if(move_pos == B_KING_START_POS) [[unlikely]] {
             bs.castling_rights &= ~B_QUEEN_CASTLE_MASK;
             bs.castling_rights &= ~B_KING_CASTLE_MASK;
         }
-        if(move_from == B_QUEEN_ROOK_START_POS) [[unlikely]] bs.castling_rights &= ~B_QUEEN_CASTLE_MASK;
-        if(move_from == B_KING_ROOK_START_POS)  [[unlikely]] bs.castling_rights &= ~B_KING_CASTLE_MASK;
+        if(move_pos == B_QUEEN_ROOK_START_POS) [[unlikely]] bs.castling_rights &= ~B_QUEEN_CASTLE_MASK;
+        if(move_pos == B_KING_ROOK_START_POS)  [[unlikely]] bs.castling_rights &= ~B_KING_CASTLE_MASK;
     }
 }
 
@@ -340,22 +342,22 @@ bool BoardManager::valid_castle(int move_from, int rook_pos, Colour side, bool k
         ? king_path = {king_from, king_from + 1, king_to}
         : king_path = {king_from, king_from - 1, king_to};
 
-    Bitboard enemy_knights = bs.get_bb(!side, PieceType::KNIGHT);
-    Bitboard enemy_king    = bs.get_bb(!side, PieceType::KING);
-    Bitboard enemy_pawns   = bs.get_bb(!side, PieceType::PAWN);
-    Bitboard enemy_bishops = bs.get_bb(!side, PieceType::BISHOP);
-    Bitboard enemy_rooks   = bs.get_bb(!side, PieceType::ROOK);
-    Bitboard enemy_queens  = bs.get_bb(!side, PieceType::QUEEN);
+    const Bitboard& enemy_knights = bs.get_bb(!side, PieceType::KNIGHT);
+    const Bitboard& enemy_king    = bs.get_bb(!side, PieceType::KING);
+    const Bitboard& enemy_pawns   = bs.get_bb(!side, PieceType::PAWN);
+    const Bitboard& enemy_bishops = bs.get_bb(!side, PieceType::BISHOP);
+    const Bitboard& enemy_rooks   = bs.get_bb(!side, PieceType::ROOK);
+    const Bitboard& enemy_queens  = bs.get_bb(!side, PieceType::QUEEN);
 
-    Bitboard enemy_sliders_rook  = enemy_rooks | enemy_queens;
-    Bitboard enemy_sliders_bishop= enemy_bishops | enemy_queens;
+    const Bitboard enemy_sliders_rook  = enemy_rooks | enemy_queens;
+    const Bitboard enemy_sliders_bishop= enemy_bishops | enemy_queens;
 
-    Bitboard enemy_occupancy     = bs.get_bb(!side, PieceType::NONE);
-    Bitboard own_occupancy       = bs.get_bb(side, PieceType::NONE);
+    const Bitboard enemy_occupancy     = bs.get_bb(!side, PieceType::NONE);
+    const Bitboard own_occupancy       = bs.get_bb(side, PieceType::NONE);
 
     // Check each square for attacks
     for (int sq : king_path) {
-        Bitboard sq_bb = 1ULL << sq;
+        const Bitboard sq_bb = 1ULL << sq;
 
         // Non-sliding pieces
         if ((KNIGHT_ATTACKS[sq] & enemy_knights) != 0) return false;

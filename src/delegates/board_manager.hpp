@@ -20,7 +20,7 @@ class BoardManager {
         BoardState& get_bs();
 
     private:
-        void inline update_castling_rights(int move_from);
+        void inline update_castling_rights(int move_pos);
         void inline update_poly_bbs();
 
         bool is_pinned(int from);
