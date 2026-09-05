@@ -12,8 +12,8 @@ inline Bitboard shift_fwd(bool is_white, Bitboard bb, uint8_t val) {
     else return bb << val; 
 }
 
-uint8_t diag_l_shift = BOARD_SIZE - 1;
-uint8_t diag_r_shift = BOARD_SIZE + 1;
+uint8_t diag_l_shift = BOARD_SIZE + 1;
+uint8_t diag_r_shift = BOARD_SIZE - 1;
 
 void init_pawn_attacks(bool is_white) {
     for (int sq = 0; sq < 64; sq++) {
