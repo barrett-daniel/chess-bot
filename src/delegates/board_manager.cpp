@@ -63,6 +63,7 @@ BoardManager::BoardManager(const std::string fen) {
         i++;
     }
 
+    bs.pinned_sqs = calc_pinned_sqs();
     bs.en_passant_square = -1;
     bs.castling_rights = 0b00001111;
 }
@@ -212,13 +213,24 @@ void BoardManager::process_castle(
 std::vector<Move> BoardManager::get_legal_moves(const std::vector<Move>& moves) {
     LOG_TRACE;
     LOGGER_OFF;
+
+    /*
+     * A two-step approach is used to check move legality:
+     *  1. Any moves which would require excessive compute to check -> push to a buffer. Later
+     *      we make each move in the buffer and check if it leaves the player in check, if not -> legal
+     *  2. Other moves are legal and so no need to fully compute making the move.
+     *
+     * This is done to try and minimise the number of moves which you need to fully compute the: "make_move ->
+     * is_in_check -> unmake_move" pattern
+     */
+
     std::vector<Move> legal_moves;
     std::vector<Move> move_buff;
     Colour side = bs.turn;
 
     bool in_check = is_in_check(side);
     for (const Move& move : moves) {
-        // check castle moves
+        // check castle moves and skip if not valid
         if (move.q_castle && !valid_q_castle(move.from, side)) continue;
         if (move.k_castle && !valid_k_castle(move.from, side)) continue;
 
@@ -228,8 +240,11 @@ std::vector<Move> BoardManager::get_legal_moves(const std::vector<Move>& moves) 
             continue;
         }
 
-        // If not in check -> skip pinned pieces
-        if (is_pinned(move.from)) continue;
+        // push pinned piece moves for fully compute check
+        if (is_pinned(move.from)) {
+            move_buff.push_back(move);
+            continue;
+        }
 
         // Otherwise, move is legal
         legal_moves.push_back(move);
