@@ -5,17 +5,23 @@
 #define PROMOTION 1 << 1
 
 void append_promotions(std::vector<Move>& moves, const Move& base);
-void encode_pawn_move_data(Bitboard bb, int from_delta, std::vector<Move>& moves, long flags); 
+void encode_pawn_move_data(Bitboard bb, int from_delta, std::vector<Move>& moves, long flags);
 
 inline Bitboard shift_fwd(bool is_white, Bitboard bb, uint8_t val) { 
-    if(is_white) return bb >> val; 
-    else return bb << val; 
+    if(is_white) return bb >> val;
+
+    return bb << val;
 }
 
-uint8_t diag_l_shift = BOARD_SIZE + 1;
-uint8_t diag_r_shift = BOARD_SIZE - 1;
+inline void get_diag_shifts(bool is_white, uint8_t *l, uint8_t *r) {
+    *l = BOARD_SIZE + (is_white ? 1 : -1);
+    *r = BOARD_SIZE - (is_white ? 1 : -1);
+}
 
 void init_pawn_attacks(bool is_white) {
+    uint8_t diag_l_shift, diag_r_shift;
+    get_diag_shifts(is_white, &diag_l_shift, &diag_r_shift);
+
     for (int sq = 0; sq < 64; sq++) {
         Bitboard from_bb = 1ULL << sq;
 
@@ -34,6 +40,8 @@ std::vector<Move> get_pawn_moves(
     const Bitboard& all_bb,
     int passant_sq
 ) {
+    uint8_t diag_l_shift, diag_r_shift;
+    get_diag_shifts(is_white, &diag_l_shift, &diag_r_shift);
     std::vector<Move> moves;
 
     Bitboard prom_rank = is_white ? RANK_1 : RANK_8;
