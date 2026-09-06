@@ -133,7 +133,7 @@ void BoardManager::make_move(const Move& move) {
 
     // pawn logic
     if(move.moved_piece == PieceType::PAWN) {
-        int forward = side == WHITE ? BOARD_SIZE : -BOARD_SIZE;
+        int forward = side == WHITE ? -BOARD_SIZE : BOARD_SIZE;
 
         // en-passant capture
         if(move.is_en_passant) {
@@ -143,7 +143,7 @@ void BoardManager::make_move(const Move& move) {
 
         // making a double push
         if(abs(move.from - move.to) == 2 * BOARD_SIZE) {
-            bs.en_passant_square = move.from - forward;
+            bs.en_passant_square = move.from + forward;
         }
 
         // promotion
