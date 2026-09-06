@@ -18,6 +18,7 @@ BoardManager::BoardManager(const std::string fen) {
     std::vector<std::string> components;
     std::string elem;
     while(ss >> elem) components.push_back(elem);
+    ASSERT(components.size() < 4, "Malformed FEN: missing castling/en passant fields");
 
     // determine whose first to move
     std::string turn_config_str = components[FEN_TURN_CONFIG];
@@ -63,9 +64,40 @@ BoardManager::BoardManager(const std::string fen) {
         i++;
     }
 
+    bs.castling_rights = 0;
+    std::string castling_config_str = components[FEN_CASTLING_CONFIG];
+    if (castling_config_str != "-") {
+        for (char c : castling_config_str) {
+            switch (c) {
+                case 'K': bs.castling_rights |= W_KING_CASTLE_MASK;  break;
+                case 'Q': bs.castling_rights |= W_QUEEN_CASTLE_MASK; break;
+                case 'k': bs.castling_rights |= B_KING_CASTLE_MASK;  break;
+                case 'q': bs.castling_rights |= B_QUEEN_CASTLE_MASK; break;
+                default: break;
+            }
+        }
+    }
+
+    // parse en passant target square, e.g. "e3" or "-"
+    std::string ep_config_str = components[FEN_EN_PASSANT_CONFIG];
+    if (ep_config_str == "-") {
+        bs.en_passant_square = -1;
+    } else {
+        int file = ep_config_str[0] - 'a';
+        int rank = ep_config_str[1] - '0';
+        int rank_from_top = BOARD_SIZE - rank;
+        bs.en_passant_square = file + (rank_from_top * BOARD_SIZE);
+    }
+
+    // parse halfmove clock (number of halfmoves since last capture/pawn move)
+    std::string halfmove_str = components[FEN_HALFMOVE_CONFIG];
+    bs.half_move_count = static_cast<uint8_t>(std::stoi(halfmove_str));
+
+    // parse fullmove number (increments after black's move)
+    std::string fullmove_str = components[FEN_FULLMOVE_CONFIG];
+    bs.full_move_count = static_cast<uint8_t>(std::stoi(fullmove_str));
+
     bs.pinned_sqs = calc_pinned_sqs();
-    bs.en_passant_square = -1;
-    bs.castling_rights = 0b00001111;
 }
 
 // ----------------------------------------------
@@ -81,6 +113,10 @@ void BoardManager::make_move(const Move& move) {
     Colour side = bs.turn;
     history.push(bs);
     bs.en_passant_square = -1;
+
+    if (side == BLACK) {
+        ++bs.full_move_count;
+    }
 
     // reset all bitboards
     for(Bitboard& bb : bs.piece_bbs()) clear_bit(bb, move.to);

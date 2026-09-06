@@ -33,7 +33,11 @@ constexpr const char* START_FEN = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w
 constexpr const char* BLANK_FEN = "8/8/8/8/8/8/8/8";
 constexpr int FEN_NUM_SECTIONS = 2;
 constexpr int FEN_BOARD_CONFIG= 0;
-constexpr int FEN_TURN_CONFIG= 1;
+constexpr int FEN_TURN_CONFIG = 1;
+constexpr int FEN_CASTLING_CONFIG = 2;
+constexpr int FEN_EN_PASSANT_CONFIG = 3;
+constexpr int FEN_HALFMOVE_CONFIG = 4;
+constexpr int FEN_FULLMOVE_CONFIG = 5;
 
 // Rendering 
 constexpr const char* WINDOW_NAME = "Chess";
@@ -246,6 +250,9 @@ class BoardState {
         uint8_t castling_rights;
         int en_passant_square;
         std::vector<int> pinned_sqs;
+
+        uint16_t full_move_count;
+        uint8_t half_move_count; // half move logic for 50-move draw rule is not yet implemented
 
         BoardState()
             : w_pawns(0), w_knights(0), w_bishops(0), w_rooks(0), w_queens(0), w_king(0),
