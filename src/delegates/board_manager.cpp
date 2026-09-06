@@ -18,7 +18,8 @@ BoardManager::BoardManager(const std::string fen) {
     std::vector<std::string> components;
     std::string elem;
     while(ss >> elem) components.push_back(elem);
-    ASSERT(components.size() < 4, "Malformed FEN: missing castling/en passant fields");
+    ASSERT(components.size() <= 6, "Malformed FEN: too many arguments provided");
+    ASSERT(components.size() >= 4, "Malformed FEN: too few arguments provided");
 
     // determine whose first to move
     std::string turn_config_str = components[FEN_TURN_CONFIG];
@@ -90,12 +91,16 @@ BoardManager::BoardManager(const std::string fen) {
     }
 
     // parse halfmove clock (number of halfmoves since last capture/pawn move)
-    std::string halfmove_str = components[FEN_HALFMOVE_CONFIG];
-    bs.half_move_count = static_cast<uint8_t>(std::stoi(halfmove_str));
+    // optional field - defaults to 0 if omitted
+    bs.half_move_count = components.size() > FEN_HALFMOVE_CONFIG
+        ? static_cast<uint8_t>(std::stoi(components[FEN_HALFMOVE_CONFIG]))
+        : 0;
 
     // parse fullmove number (increments after black's move)
-    std::string fullmove_str = components[FEN_FULLMOVE_CONFIG];
-    bs.full_move_count = static_cast<uint8_t>(std::stoi(fullmove_str));
+    // optional field - defaults to 1 if omitted
+    bs.full_move_count = components.size() > FEN_FULLMOVE_CONFIG
+        ? static_cast<uint8_t>(std::stoi(components[FEN_FULLMOVE_CONFIG]))
+        : 1;
 
     bs.pinned_sqs = calc_pinned_sqs();
 }
@@ -382,14 +387,13 @@ bool BoardManager::valid_castle(int move_from, int rook_pos, Colour side, bool k
 
     // Check that no pieces are between king and rook
     Bitboard delta_bb = get_delta_bb(move_from, rook_pos);
-    Bitboard own_pieces = bs.get_bb(side, PieceType::NONE);
-    if ((delta_bb & own_pieces) != 0) return false;
+    if ((delta_bb & bs.all_pieces) != 0) return false;
 
     int king_from = move_from;
     int king_to   = king_castle ? move_from + 2 : move_from - 2;
     std::vector<int> king_path;
 
-    king_castle 
+    king_castle
         ? king_path = {king_from, king_from + 1, king_to}
         : king_path = {king_from, king_from - 1, king_to};
 
