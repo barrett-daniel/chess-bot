@@ -192,6 +192,8 @@ enum PieceType {
     PAWN, KNIGHT, BISHOP, ROOK, QUEEN, KING, NONE
 };
 
+
+std::string to_string_sq(int sq);
 class Move {
     public:
         int from;
@@ -214,6 +216,20 @@ class Move {
             q_castle(false),
             k_castle(false)
         {}
+
+        std::string to_string() const {
+            std::string s = to_string_sq(from) + to_string_sq(to);
+            if (promotion_piece != NONE) {
+                switch (promotion_piece) {
+                    case QUEEN:  s += 'q'; break;
+                    case ROOK:   s += 'r'; break;
+                    case BISHOP: s += 'b'; break;
+                    case KNIGHT: s += 'n'; break;
+                    default: break;
+                }
+            }
+            return s;
+        }
 };
 
 constexpr int NUM_PIECE_BBS = 12;
@@ -278,6 +294,9 @@ class BoardState {
 std::string to_string(Colour colour);
 std::string to_string_coord(int coord);
 std::string to_string(const Bitboard& board);
+bool contains(const std::vector<Move>& moves, const Move& move);
+Bitboard shift_dir(Bitboard bb, int dir);
+void log_bitboard(const Bitboard& bb);
 
 constexpr inline void set_bit(Bitboard& bb, int pos) {
     bb |= (1ULL << pos);
@@ -297,10 +316,6 @@ constexpr inline int pop_lsb(uint64_t &bb) {
     bb &= bb - 1;
     return index;
 }
-
-bool contains(const std::vector<Move>& moves, const Move& move);
-Bitboard shift_dir(Bitboard bb, int dir);
-void log_bitboard(const Bitboard& bb);
 
 template<typename T>
 std::vector<T> combine(const std::vector<T>& v) {
