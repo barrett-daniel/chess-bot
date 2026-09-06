@@ -272,8 +272,8 @@ std::vector<Move> BoardManager::get_legal_moves(const std::vector<Move>& moves) 
     bool in_check = is_in_check(side);
     for (const Move& move : moves) {
         // check castle moves and skip if not valid
-        if (move.q_castle && !valid_q_castle(move.from, side)) continue;
-        if (move.k_castle && !valid_k_castle(move.from, side)) continue;
+        if (move.q_castle && !valid_q_castle(move.from, side, in_check)) continue;
+        if (move.k_castle && !valid_k_castle(move.from, side, in_check)) continue;
 
         // If the player is in check, or we're evaluating king moves, buffer it to fully compute later
         if (in_check || move.moved_piece == PieceType::KING) {
@@ -369,19 +369,26 @@ inline bool BoardManager::same_line(int from, int to, int dir) {
     }
 }
 
-bool BoardManager::valid_q_castle(int move_from, Colour side) {
+bool BoardManager::valid_q_castle(int move_from, Colour side, bool in_check) {
     LOG_TRACE;
+
+    if (in_check) return false;
+
     int rook_pos = side == WHITE ? W_QUEEN_ROOK_START_POS : B_QUEEN_ROOK_START_POS;
     return valid_castle(move_from, rook_pos, side, false);
 }
 
-bool BoardManager::valid_k_castle(int move_from, Colour side) {
+bool BoardManager::valid_k_castle(int move_from, Colour side, bool in_check) {
     LOG_TRACE;
+
+    if (in_check) return false;
+
     int rook_pos = side == WHITE ? W_KING_ROOK_START_POS : B_KING_ROOK_START_POS;
     return valid_castle(move_from, rook_pos, side, true);
 
 }
 
+// NOTE: does not consider if the king is already in check such should be precomputed
 bool BoardManager::valid_castle(int move_from, int rook_pos, Colour side, bool king_castle) {
     LOG_TRACE;
 

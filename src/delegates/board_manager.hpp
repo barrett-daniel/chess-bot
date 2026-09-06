@@ -34,8 +34,8 @@ class BoardManager {
             int king_from, int king_to, Colour side
         );
 
-        bool valid_q_castle(int move_from, Colour side);
-        bool valid_k_castle(int move_from, Colour side);
+        bool valid_q_castle(int move_from, Colour side, bool in_check);
+        bool valid_k_castle(int move_from, Colour side, bool in_check);
         bool valid_castle(int move_from, int rook_pos, Colour side, bool king_castle);
         Bitboard get_delta_bb(int a, int b);
 
