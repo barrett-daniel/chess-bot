@@ -1,4 +1,5 @@
 // include file to automatically include all piece headers
+#pragma once
 
 #include "pawn.hpp"
 #include "knight.hpp"
