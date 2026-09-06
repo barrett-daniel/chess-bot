@@ -287,6 +287,18 @@ std::vector<Move> BoardManager::get_legal_moves(const std::vector<Move>& moves) 
             continue;
         }
 
+        // push enpassant moves to the buffer to fully compute
+        // this is to account for en-passants causing two pawns to disappear from the same rank, which could
+        // result in a discovered check on the player for horizontal moving pieces (rooks, queens)
+        //
+        // could optimise this by shooting a ray to check explicitly instead of fully computing, but such instances
+        // are rare and so likely induce little overhead. -> refactor and implement optimisation if this branch
+        // induces signifcant overhead.
+        if (move.is_en_passant) {
+            move_buff.push_back(move);
+            continue;
+        }
+
         // Otherwise, move is legal
         legal_moves.push_back(move);
     }
