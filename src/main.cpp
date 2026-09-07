@@ -9,17 +9,28 @@
 To Do:
 
 OTHER:
-- commenting approach
-- clean up code
+- GUI improvements:
+    - Options of how to use app: play against another person, play against bot, etc.
+    - offload AI work to background thread to not buffer main thread
 
 MOVE OPTAMISATION:
 - rework history into undo_structs
-- precompute more at eration time to reduce overhead of make_move
+- precomputed move tables for bishops and rooks
+- change 'Sqaure' from 'int' to 'uint8_t'
+- reduce heap allocations i.e. use std::array not std::vector
 
 AI OPTAMISATION:
 - sorting moves
 - hash-set for openenings
 - overlay bbs for piece positions at various states for better positioning
+- opening move book
+- endgame move book/optimisation
+
+https://chessprogramming.org/Encoding_Moves#fn2
+https://chessprogramming.org/Perft
+https://chessprogramming.org/Perft_Results#position-3
+https://chessprogramming.org/UCI
+https://grandchesstree.com/tools
 
 */
 
