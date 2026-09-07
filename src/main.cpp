@@ -12,6 +12,9 @@ OTHER:
 - GUI improvements:
     - Options of how to use app: play against another person, play against bot, etc.
     - offload AI work to background thread to not buffer main thread
+    - stalemate / draw
+    - cache is in check / stalemate?
+    - 50 move rule i.e. halfmove count
 
 MOVE OPTAMISATION:
 - rework history into undo_structs
@@ -71,10 +74,10 @@ int main(int argc, char* argv[]) {
         Colour turn = board_manager.get_bs().turn;
 
         LOGGER_OFF;
-        if(board_manager.is_checkmate(turn)) {
+        GameState state = board_manager.get_game_state();
+        if (is_game_over(state)) {
             LOGGER_ON;
-            LOG(to_string(!turn) + " Won!");
-            std::cout << to_string(!turn) << " Won!" << std::endl;
+            LOG("Game Over! State: " + state);
             input_manager.quit();
             break;
         }

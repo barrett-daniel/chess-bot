@@ -196,6 +196,12 @@ enum PieceType {
     PAWN, KNIGHT, BISHOP, ROOK, QUEEN, KING, NONE
 };
 
+enum GameState {
+    CHECK,
+    CHECKMATE,
+    STALEMATE,
+    UNFINISHED
+};
 
 std::string to_string_sq(int sq);
 class Move {
@@ -304,6 +310,7 @@ std::string to_string(const Bitboard& board);
 bool contains(const std::vector<Move>& moves, const Move& move);
 Bitboard shift_dir(Bitboard bb, int dir);
 void log_bitboard(const Bitboard& bb);
+bool is_game_over(GameState state);
 
 constexpr inline void set_bit(Bitboard& bb, int pos) {
     bb |= (1ULL << pos);

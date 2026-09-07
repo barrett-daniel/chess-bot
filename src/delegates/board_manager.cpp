@@ -464,6 +464,14 @@ Bitboard BoardManager::get_delta_bb(int a, int b) {
 // Game State checkers
 // ----------------------------------------------
 
+GameState BoardManager::get_game_state() {
+    std::vector<Move> legal_moves = get_legal_moves(get_moves(bs.turn, bs));
+    if (legal_moves.empty()) return is_in_check(bs.turn) ? CHECKMATE : STALEMATE;
+    if (is_in_check(bs.turn)) return CHECK;
+
+    return UNFINISHED;
+}
+
 bool BoardManager::is_in_check(Colour side) {
     LOG_TRACE;
 
@@ -488,23 +496,6 @@ bool BoardManager::is_in_check(Colour side) {
     return false;
 }
 
-bool BoardManager::is_checkmate(Colour side) {
-    LOG_TRACE;
-    
-    if (!is_in_check(side)) return false;
-
-    std::vector<Move> moves = get_moves(side, bs);
-    std::vector<Move> legal_moves = get_legal_moves(moves);
-    return legal_moves.empty();
-}
-
-bool BoardManager::is_stalemate(Colour side) {
-    LOG_TRACE;
-
-    bool no_legal_moves = get_legal_moves(get_moves(side, bs)).empty();
-    bool not_in_check = !is_in_check(side);
-    return no_legal_moves & not_in_check;
-}
 
 // ----------------------------------------------
 // Getters

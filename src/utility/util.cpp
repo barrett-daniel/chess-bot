@@ -107,3 +107,12 @@ void log_bitboard(const Bitboard& bb) {
         LOG(line);
     }
 }
+
+bool is_game_over(GameState state) {
+    switch (state) {
+        case CHECKMATE:
+        case STALEMATE: return true;
+        case UNFINISHED:
+        case CHECK: return false;
+    }
+}
