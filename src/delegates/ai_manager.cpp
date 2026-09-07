@@ -61,12 +61,14 @@ int AIManager::min_max(BoardManager& board_manager, int depth, bool is_maximisin
 
     if(depth == 0) return eval_board(bs);
 
+    bool in_check = board_manager.is_in_check(bs.turn);
     std::vector<Move> moves = get_moves(bs.turn, bs);
-    std::vector<Move> valid_moves = board_manager.get_legal_moves(moves);
+    std::vector<Move> valid_moves = board_manager.get_legal_moves(moves, in_check);
 
-    if (valid_moves.empty()) {
-        if (board_manager.is_in_check(bs.turn))return bs.turn == ai_colour ? INT_MIN : INT_MAX; // checkmate
-        else return 0; // stalemate
+    switch (BoardManager::get_game_state(valid_moves, in_check)) {
+        case CHECKMATE: return bs.turn == ai_colour ? INT_MIN : INT_MAX;
+        case STALEMATE: return 0;
+        default: break;
     }
 
     int best_score = is_maximising ? INT_MIN : INT_MAX;

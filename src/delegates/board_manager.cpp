@@ -251,7 +251,7 @@ void BoardManager::process_castle(
     set_bit(king_bb, king_to);
 }
 
-std::vector<Move> BoardManager::get_legal_moves(const std::vector<Move>& moves) {
+std::vector<Move> BoardManager::get_legal_moves(const std::vector<Move>& moves, bool in_check) {
     LOG_TRACE;
     LOGGER_OFF;
 
@@ -269,7 +269,6 @@ std::vector<Move> BoardManager::get_legal_moves(const std::vector<Move>& moves) 
     std::vector<Move> move_buff;
     Colour side = bs.turn;
 
-    bool in_check = is_in_check(side);
     for (const Move& move : moves) {
         // check castle moves and skip if not valid
         if (move.q_castle && !valid_q_castle(move.from, side, in_check)) continue;
@@ -315,6 +314,10 @@ std::vector<Move> BoardManager::get_legal_moves(const std::vector<Move>& moves) 
 
     LOGGER_ON;
     return legal_moves;
+}
+
+std::vector<Move> BoardManager::get_legal_moves(const std::vector<Move>& moves) {
+    return get_legal_moves(moves, is_in_check(bs.turn));
 }
 
 bool BoardManager::is_pinned(int from) {
@@ -464,12 +467,16 @@ Bitboard BoardManager::get_delta_bb(int a, int b) {
 // Game State checkers
 // ----------------------------------------------
 
-GameState BoardManager::get_game_state() {
-    std::vector<Move> legal_moves = get_legal_moves(get_moves(bs.turn, bs));
-    if (legal_moves.empty()) return is_in_check(bs.turn) ? CHECKMATE : STALEMATE;
-    if (is_in_check(bs.turn)) return CHECK;
+GameState BoardManager::get_game_state(const std::vector<Move>& legal_moves, bool in_check) {
+    if (legal_moves.empty()) return in_check ? CHECKMATE : STALEMATE;
+    if (in_check) return CHECK;
 
     return UNFINISHED;
+}
+
+GameState BoardManager::get_game_state() {
+    bool in_check = is_in_check(bs.turn);
+    return get_game_state(get_legal_moves(get_moves(bs.turn, bs), in_check), in_check);
 }
 
 bool BoardManager::is_in_check(Colour side) {

@@ -11,8 +11,10 @@ class BoardManager {
 
         void make_move(const Move& move);
         void undo_move();
+        std::vector<Move> get_legal_moves(const std::vector<Move>& moves, bool in_check);
         std::vector<Move> get_legal_moves(const std::vector<Move>& moves);
 
+        static GameState get_game_state(const std::vector<Move>& legal_moves, bool in_check);
         GameState get_game_state();
         bool is_in_check(Colour side);
 
