@@ -29,7 +29,7 @@
 #endif
 
 // FEN
-constexpr const char* START_FEN = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w";
+constexpr const char* START_FEN = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
 constexpr const char* BLANK_FEN = "8/8/8/8/8/8/8/8";
 constexpr int FEN_NUM_SECTIONS = 2;
 constexpr int FEN_BOARD_CONFIG= 0;
