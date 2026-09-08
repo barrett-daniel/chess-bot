@@ -4,7 +4,7 @@
 // ------------------------------------
 // Private Function Prototypes
 // ------------------------------------
-std::vector<Move> get_sweep_moves(
+tracked_array<Move, MAX_NUM_MOVES> get_sweep_moves(
     Bitboard from_bb,
     const Bitboard& own_pieces,
     const Bitboard& enemy_pieces,
@@ -23,7 +23,7 @@ Bitboard get_sweep(
 void encode_sweep_move_data(
     Bitboard bb, 
     Square from,
-    std::vector<Move>& moves, 
+    tracked_array<Move, MAX_NUM_MOVES>& moves, 
     PieceType type
 );
 
@@ -81,7 +81,7 @@ Bitboard get_queen_attack_sqs(
             get_rook_attack_sqs(from_bb, own_pieces, enemy_pieces);
 }
 
-std::vector<Move> get_rook_moves(
+tracked_array<Move, MAX_NUM_MOVES> get_rook_moves(
     Bitboard from_bb,
     const Bitboard& own_pieces,
     const Bitboard& enemy_pieces
@@ -94,7 +94,7 @@ std::vector<Move> get_rook_moves(
     );
 }
 
-std::vector<Move> get_bishop_moves(
+tracked_array<Move, MAX_NUM_MOVES> get_bishop_moves(
     Bitboard from_bb,
     const Bitboard& own_pieces,
     const Bitboard& enemy_pieces
@@ -107,7 +107,7 @@ std::vector<Move> get_bishop_moves(
     );
 }
 
-std::vector<Move> get_queen_moves(
+tracked_array<Move, MAX_NUM_MOVES> get_queen_moves(
     Bitboard from_bb,
     const Bitboard& own_pieces,
     const Bitboard& enemy_pieces
@@ -131,14 +131,14 @@ std::vector<Move> get_queen_moves(
 // Private Function Definitions
 // ------------------------------------
 
-std::vector<Move> get_sweep_moves(
+tracked_array<Move, MAX_NUM_MOVES> get_sweep_moves(
     Bitboard from_bb,
     const Bitboard& own_pieces,
     const Bitboard& enemy_pieces,
     std::vector<std::pair<int, Bitboard>> directions,
     PieceType type
 ) {
-    std::vector<Move> moves;
+    tracked_array<Move, MAX_NUM_MOVES> moves;
 
     // do each separately
     while(from_bb) {
@@ -188,7 +188,7 @@ Bitboard get_sweep(
     return attacks;
 }
 
-void encode_sweep_move_data(Bitboard bb, Square from, std::vector<Move>& moves, PieceType type) {
+void encode_sweep_move_data(Bitboard bb, Square from, tracked_array<Move, MAX_NUM_MOVES>& moves, PieceType type) {
     while(bb) {
         Square to = pop_lsb(bb);
         moves.emplace_back(from, to, type);

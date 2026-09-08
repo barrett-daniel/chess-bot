@@ -52,9 +52,9 @@ TEST_SUITE("PERFT Tests") {
      * necessary moves in order, then calling divide.
      */
     TEST_CASE("Util Check") {
-        before_each();
-        BoardManager bm = BoardManager(START_FEN);
-        divide(bm, 6);
+        // before_each();
+        // BoardManager bm = BoardManager(START_FEN);
+        // divide(bm, 6);
     }
 
     //

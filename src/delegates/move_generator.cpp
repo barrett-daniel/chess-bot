@@ -3,9 +3,9 @@
 #include "../utility/logger.hpp"
 #include "../pieces/pieces.hpp"
 
-std::vector<Move> get_moves(Colour side, BoardState& bs, PieceType type);
+tracked_array<Move, MAX_NUM_MOVES> get_moves(Colour side, BoardState& bs, PieceType type);
 
-std::vector<Move> get_moves(Colour side, BoardState& bs, int pos) {
+tracked_array<Move, MAX_NUM_MOVES> get_moves(Colour side, BoardState& bs, int pos) {
     LOG_TRACE;
     Bitboard enemy_pieces = bs.get_bb(!side, PieceType::NONE);
     Bitboard own_pieces   = bs.get_bb(side, PieceType::NONE);
@@ -86,23 +86,30 @@ std::vector<Move> get_moves(Colour side, BoardState& bs, int pos) {
     return {};
 }
 
-std::vector<Move> get_moves(Colour side, BoardState& bs) {
+tracked_array<Move, MAX_NUM_MOVES> get_moves(Colour side, BoardState& bs) {
     LOG_TRACE;
     LOGGER_OFF;
-    std::vector<Move> moves;
+    tracked_array<Move, MAX_NUM_MOVES> moves;
 
-    std::vector<Move> pawn_moves   = get_moves(side, bs, PieceType::PAWN);
-    std::vector<Move> knight_moves = get_moves(side, bs, PieceType::KNIGHT);
-    std::vector<Move> bishop_moves = get_moves(side, bs, PieceType::BISHOP);
-    std::vector<Move> rook_moves   = get_moves(side, bs, PieceType::ROOK);
-    std::vector<Move> queen_moves  = get_moves(side, bs, PieceType::QUEEN);
-    std::vector<Move> king_moves   = get_moves(side, bs, PieceType::KING);
+    tracked_array<Move, MAX_NUM_MOVES> pawn_moves   = get_moves(side, bs, PieceType::PAWN);
+    tracked_array<Move, MAX_NUM_MOVES> knight_moves = get_moves(side, bs, PieceType::KNIGHT);
+    tracked_array<Move, MAX_NUM_MOVES> bishop_moves = get_moves(side, bs, PieceType::BISHOP);
+    tracked_array<Move, MAX_NUM_MOVES> rook_moves   = get_moves(side, bs, PieceType::ROOK);
+    tracked_array<Move, MAX_NUM_MOVES> queen_moves  = get_moves(side, bs, PieceType::QUEEN);
+    tracked_array<Move, MAX_NUM_MOVES> king_moves   = get_moves(side, bs, PieceType::KING);
+
+    moves.insert(moves.begin(), pawn_moves.begin(), pawn_moves.end());
+    moves.insert(moves.begin(), knight_moves.begin(), knight_moves.end());
+    moves.insert(moves.begin(), bishop_moves.begin(), bishop_moves.end());
+    moves.insert(moves.begin(), rook_moves.begin(), rook_moves.end());
+    moves.insert(moves.begin(), queen_moves.begin(), queen_moves.end());
+    moves.insert(moves.begin(), king_moves.begin(), king_moves.end());
 
     LOGGER_ON;
-    return combine(pawn_moves, knight_moves, bishop_moves, rook_moves, queen_moves, king_moves);
+    return moves;
 }
 
-std::vector<Move> get_moves(Colour side, BoardState& bs, PieceType type) {
+tracked_array<Move, MAX_NUM_MOVES> get_moves(Colour side, BoardState& bs, PieceType type) {
     LOG_TRACE;
     Bitboard own_pieces_bb = bs.get_bb(side, PieceType::NONE);
     Bitboard pieces_bb     = bs.get_bb(!side, PieceType::NONE);

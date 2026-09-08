@@ -71,7 +71,7 @@ void InputManager::handle_left_click(int x, int y) {
     if(selected_sq != NULL_SQ) handle_attempted_move(click_pos);
 }
 
-std::vector<Move> InputManager::get_selected_moves() {
+tracked_array<Move, MAX_NUM_MOVES> InputManager::get_selected_moves() {
     auto moves = get_moves(player, board_manager.get_bs(), selected_sq);
 
     for(Move move : moves) {
@@ -83,7 +83,7 @@ std::vector<Move> InputManager::get_selected_moves() {
 void InputManager::handle_attempted_move(Square click_pos) {
     LOG_TRACE;
 
-    std::vector<Move> legal_moves = get_selected_moves();
+    tracked_array<Move, MAX_NUM_MOVES> legal_moves = get_selected_moves();
     for(Move move : legal_moves) {
         if(move.to == click_pos) {
             if(move.promotion_piece != NONE) {

@@ -12,10 +12,10 @@ class BoardManager {
 
         void make_move(const Move& move);
         void undo_move();
-        std::vector<Move> get_legal_moves(const std::vector<Move>& moves, bool in_check);
-        std::vector<Move> get_legal_moves(const std::vector<Move>& moves);
+        tracked_array<Move, MAX_NUM_MOVES> get_legal_moves(const tracked_array<Move, MAX_NUM_MOVES>& moves, bool in_check);
+        tracked_array<Move, MAX_NUM_MOVES> get_legal_moves(const tracked_array<Move, MAX_NUM_MOVES>& moves);
 
-        static GameState get_game_state(const std::vector<Move>& legal_moves, bool in_check);
+        static GameState get_game_state(const tracked_array<Move, MAX_NUM_MOVES>& legal_moves, bool in_check);
         GameState get_game_state();
         bool is_in_check(Colour side);
 
@@ -26,7 +26,7 @@ class BoardManager {
         void inline update_poly_bbs();
 
         bool is_pinned(Square from);
-        std::array<Square, BOARD_SIZE> calc_pinned_sqs();
+        tracked_array<Square, BOARD_SIZE> calc_pinned_sqs();
         inline bool same_line(Square from, Square to, int dir);
 
         void process_q_castle(Colour side);

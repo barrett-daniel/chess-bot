@@ -14,7 +14,7 @@ class InputManager {
         void process_inputs();
 
         bool is_any_piece_selected() const;
-        std::vector<Move> get_selected_moves();
+        tracked_array<Move, MAX_NUM_MOVES> get_selected_moves();
 
         void set_player(Colour colour);
 

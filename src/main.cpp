@@ -113,6 +113,7 @@ int main(int argc, char* argv[]) {
         if (frame_delay > frame_time) SDL_Delay(frame_delay - frame_time);
     }
 
+    std::cout << std::is_trivially_copyable_v<Move>;
     SDL_DestroyWindow(window);
     SDL_Quit();
     return 0;

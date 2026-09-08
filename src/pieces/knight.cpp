@@ -1,7 +1,7 @@
 #include "knight.hpp"
 #include "../utility/logger.hpp"
 
-void encode_knight_move_data(Bitboard bb, int from_delta, std::vector<Move>& moves);
+void encode_knight_move_data(Bitboard bb, int from_delta, tracked_array<Move, MAX_NUM_MOVES>& moves);
 
 void init_knight_attacks() {
     for (Square sq = 0; sq < BOARD_SIZE * BOARD_SIZE; sq++) {
@@ -15,11 +15,11 @@ void init_knight_attacks() {
     }
 }
 
-std::vector<Move> get_knight_moves(
+tracked_array<Move, MAX_NUM_MOVES> get_knight_moves(
     Bitboard from_bb,
     const Bitboard& own_pieces
 ) {
-    std::vector<Move> moves;
+    tracked_array<Move, MAX_NUM_MOVES> moves;
 
     for(auto [dir, mask] : KNIGHT_DIRECTIONS) {
         Bitboard bb = shift_dir(from_bb & ~mask, dir) & ~own_pieces;
@@ -32,7 +32,7 @@ std::vector<Move> get_knight_moves(
 void encode_knight_move_data(
     Bitboard bb, 
     int from_delta,
-    std::vector<Move>& moves
+    tracked_array<Move, MAX_NUM_MOVES>& moves
 ) {
     while(bb) {
         Square to = pop_lsb(bb);

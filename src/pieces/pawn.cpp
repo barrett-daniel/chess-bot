@@ -4,8 +4,8 @@
 #define PASSANT 1
 #define PROMOTION 1 << 1
 
-void append_promotions(std::vector<Move>& moves, const Move& base);
-void encode_pawn_move_data(Bitboard bb, int from_delta, std::vector<Move>& moves, long flags);
+void append_promotions(tracked_array<Move, MAX_NUM_MOVES>& moves, const Move& base);
+void encode_pawn_move_data(Bitboard bb, int from_delta, tracked_array<Move, MAX_NUM_MOVES>& moves, long flags);
 
 inline Bitboard shift_fwd(bool is_white, Bitboard bb, uint8_t val) { 
     if(is_white) return bb >> val;
@@ -40,7 +40,7 @@ void init_pawn_attacks(bool is_white) {
     }
 }
 
-std::vector<Move> get_pawn_moves(
+tracked_array<Move, MAX_NUM_MOVES> get_pawn_moves(
     Bitboard from_bb,
     bool is_white,
     const Bitboard& enemy_bb,
@@ -49,7 +49,7 @@ std::vector<Move> get_pawn_moves(
 ) {
     uint8_t diag_l_shift, diag_r_shift;
     get_diag_shifts(is_white, &diag_l_shift, &diag_r_shift);
-    std::vector<Move> moves;
+    tracked_array<Move, MAX_NUM_MOVES> moves;
 
     Bitboard prom_rank = is_white ? RANK_1 : RANK_8;
     Bitboard empty = ~all_bb;
@@ -102,7 +102,7 @@ std::vector<Move> get_pawn_moves(
 }
 
 // appends all promotion variants of a given base move to a list of moves
-void append_promotions(std::vector<Move>& moves, const Move& base) {
+void append_promotions(tracked_array<Move, MAX_NUM_MOVES>& moves, const Move& base) {
     for (PieceType type : {QUEEN, ROOK, BISHOP, KNIGHT}) {
         Move promoted = base;
         promoted.promotion_piece = type;
@@ -116,7 +116,7 @@ void append_promotions(std::vector<Move>& moves, const Move& base) {
 void encode_pawn_move_data(
     Bitboard bb, 
     int from_delta, 
-    std::vector<Move>& moves, 
+    tracked_array<Move, MAX_NUM_MOVES>& moves, 
     long flags
 ) {
     while(bb) {

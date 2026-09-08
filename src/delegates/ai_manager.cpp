@@ -37,10 +37,10 @@ Move AIManager::get_move(BoardManager& board_manager, int depth) {
 
     calls = 0;
     BoardState& bs = board_manager.get_bs();
-    std::vector<Move> moves = get_moves(bs.turn, bs);
-    std::vector<Move> valid_moves = board_manager.get_legal_moves(moves);
+    tracked_array<Move, MAX_NUM_MOVES> moves = get_moves(bs.turn, bs);
+    tracked_array<Move, MAX_NUM_MOVES> valid_moves = board_manager.get_legal_moves(moves);
 
-    Move best = valid_moves.front();
+    Move best = valid_moves[0];
     int highest_score = INT_MIN;
 
     for(Move move : valid_moves) {
@@ -62,8 +62,8 @@ int AIManager::min_max(BoardManager& board_manager, int depth, bool is_maximisin
     if(depth == 0) return eval_board(bs);
 
     bool in_check = board_manager.is_in_check(bs.turn);
-    std::vector<Move> moves = get_moves(bs.turn, bs);
-    std::vector<Move> valid_moves = board_manager.get_legal_moves(moves, in_check);
+    tracked_array<Move, MAX_NUM_MOVES> moves = get_moves(bs.turn, bs);
+    tracked_array<Move, MAX_NUM_MOVES> valid_moves = board_manager.get_legal_moves(moves, in_check);
 
     switch (BoardManager::get_game_state(valid_moves, in_check)) {
         case CHECKMATE: return bs.turn == ai_colour ? INT_MIN : INT_MAX;

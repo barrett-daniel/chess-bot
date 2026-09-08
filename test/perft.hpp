@@ -10,8 +10,8 @@
  * i.e. counts the total number of possible positions from the given position and depth.
  */
 inline uint64_t perft(BoardManager& bm, int depth) {
-    std::vector<Move> moves = get_moves(bm.get_bs().turn, bm.get_bs());
-    std::vector<Move> legal_moves = bm.get_legal_moves(moves);
+    tracked_array<Move, MAX_NUM_MOVES> moves = get_moves(bm.get_bs().turn, bm.get_bs());
+    tracked_array<Move, MAX_NUM_MOVES> legal_moves = bm.get_legal_moves(moves);
 
     if (depth == 1) {
         return legal_moves.size();
@@ -31,8 +31,8 @@ inline uint64_t perft(BoardManager& bm, int depth) {
  * generated from each possible move at the current state. Logs a message for the number of nodes
  */
 inline void divide(BoardManager& bm, int depth) {
-    std::vector<Move> moves = get_moves(bm.get_bs().turn, bm.get_bs());
-    std::vector<Move> legal_moves = bm.get_legal_moves(moves);
+    tracked_array<Move, MAX_NUM_MOVES> moves = get_moves(bm.get_bs().turn, bm.get_bs());
+    tracked_array<Move, MAX_NUM_MOVES> legal_moves = bm.get_legal_moves(moves);
 
     uint64_t total = 0;
     for (const Move& move : legal_moves) {

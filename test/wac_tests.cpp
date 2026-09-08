@@ -53,7 +53,7 @@ TEST_SUITE("Win At Chess") {
     /**
      * Parses an algebraic chess notation move string into a move struct
      */
-    Move to_move(const std::string& input, const std::vector<Move>& legal_moves) {
+    Move to_move(const std::string& input, const tracked_array<Move, MAX_NUM_MOVES>& legal_moves) {
         std::string san = input;
 
         // Strip check suffixes (+)
@@ -86,7 +86,7 @@ TEST_SUITE("Win At Chess") {
 
 
         // find matches
-        std::vector<Move> matches;
+        tracked_array<Move, MAX_NUM_MOVES> matches;
         for (const auto& m : legal_moves) {
             if (m.moved_piece != piece) continue;
             if (m.to != to) continue;
@@ -105,7 +105,7 @@ TEST_SUITE("Win At Chess") {
         if (matches.empty()) throw std::invalid_argument("No legal move matches SAN: " + input);
         if (matches.size() > 1) throw std::invalid_argument("Ambiguous SAN move, needs more disambiguation: " + input);
 
-        return matches.front();
+        return matches[0];
     }
 
     /**
@@ -115,8 +115,8 @@ TEST_SUITE("Win At Chess") {
      * @param bm the board manager for which these moves are possible within the current state
      * @return
      */
-    std::vector<Move> to_moves(const std::string& moves_str, BoardManager& bm) {
-        std::vector<Move> moves;
+    tracked_array<Move, MAX_NUM_MOVES> to_moves(const std::string& moves_str, BoardManager& bm) {
+        tracked_array<Move, MAX_NUM_MOVES> moves;
 
         std::vector<std::string> chunks;
         std::stringstream ss(moves_str);
@@ -126,7 +126,7 @@ TEST_SUITE("Win At Chess") {
             chunks.push_back(elem);
         }
 
-        std::vector<Move> legal_moves = bm.get_legal_moves(get_moves(bm.get_bs().turn, bm.get_bs()));
+        tracked_array<Move, MAX_NUM_MOVES> legal_moves = bm.get_legal_moves(get_moves(bm.get_bs().turn, bm.get_bs()));
         for (const std::string& chunk : chunks) {
             moves.push_back(to_move(chunk, legal_moves));
         }
@@ -161,8 +161,8 @@ TEST_SUITE("Win At Chess") {
 
     struct TestCaseData {
         BoardManager bm;
-        std::vector<Move> best_moves;
-        std::vector<Move> avoid_moves;
+        tracked_array<Move, MAX_NUM_MOVES> best_moves;
+        tracked_array<Move, MAX_NUM_MOVES> avoid_moves;
 
     };
 

@@ -251,7 +251,7 @@ void BoardManager::process_castle(
     set_bit(king_bb, king_to);
 }
 
-std::vector<Move> BoardManager::get_legal_moves(const std::vector<Move>& moves, bool in_check) {
+tracked_array<Move, MAX_NUM_MOVES> BoardManager::get_legal_moves(const tracked_array<Move, MAX_NUM_MOVES>& moves, bool in_check) {
     LOG_TRACE;
     LOGGER_OFF;
 
@@ -265,8 +265,8 @@ std::vector<Move> BoardManager::get_legal_moves(const std::vector<Move>& moves, 
      * is_in_check -> unmake_move" pattern
      */
 
-    std::vector<Move> legal_moves;
-    std::vector<Move> move_buff;
+    tracked_array<Move, MAX_NUM_MOVES> legal_moves;
+    tracked_array<Move, MAX_NUM_MOVES> move_buff;
     Colour side = bs.turn;
 
     for (const Move& move : moves) {
@@ -316,7 +316,7 @@ std::vector<Move> BoardManager::get_legal_moves(const std::vector<Move>& moves, 
     return legal_moves;
 }
 
-std::vector<Move> BoardManager::get_legal_moves(const std::vector<Move>& moves) {
+tracked_array<Move, MAX_NUM_MOVES> BoardManager::get_legal_moves(const tracked_array<Move, MAX_NUM_MOVES>& moves) {
     return get_legal_moves(moves, is_in_check(bs.turn));
 }
 
@@ -327,8 +327,8 @@ bool BoardManager::is_pinned(Square from) {
     return false;
 }
 
-std::array<Square, BOARD_SIZE> BoardManager::calc_pinned_sqs() {
-    tracked_array<Square, BOARD_SIZE> pinned_sqs{};
+tracked_array<Square, BOARD_SIZE> BoardManager::calc_pinned_sqs() {
+    tracked_array<Square, BOARD_SIZE> pinned_sqs;
     Colour side = bs.turn;
 
     Bitboard king_bb = bs.get_bb(side, PieceType::KING);
@@ -368,7 +368,7 @@ std::array<Square, BOARD_SIZE> BoardManager::calc_pinned_sqs() {
 
     check_pins(ROOK_DIRECTIONS, enemy_rooks, pinned_sqs);
     check_pins(BISHOP_DIRECTIONS, enemy_bishops, pinned_sqs);
-    return pinned_sqs.data;
+    return pinned_sqs;
 }
 
 inline bool BoardManager::same_line(Square from, Square to, int dir) {
@@ -467,7 +467,7 @@ Bitboard BoardManager::get_delta_bb(Square a, Square b) {
 // Game State checkers
 // ----------------------------------------------
 
-GameState BoardManager::get_game_state(const std::vector<Move>& legal_moves, bool in_check) {
+GameState BoardManager::get_game_state(const tracked_array<Move, MAX_NUM_MOVES>& legal_moves, bool in_check) {
     if (legal_moves.empty()) return in_check ? CHECKMATE : STALEMATE;
     if (in_check) return CHECK;
 

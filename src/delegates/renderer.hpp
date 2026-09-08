@@ -14,7 +14,7 @@ class Renderer {
     public:
         Renderer(SDL_Renderer* renderer, Colour player);
         void render_board(const BoardState& bs) const;
-        void render_selected_moves(const std::vector<Move>& moves) const;
+        void render_selected_moves(const tracked_array<Move, MAX_NUM_MOVES>& moves) const;
 
     private:
         SDL_Texture* get_tex_for_piece(PieceType type, Colour side) const;

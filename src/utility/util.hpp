@@ -7,25 +7,27 @@
 #include <cstdlib>
 #include <bitset>
 #include <cstdint>
+#include <cstring>
 #include <vector>
-
-#define ASSERT(expr, msg) \
-    if (!(expr)) { \
-        std::cerr << "*****" << std::endl << \
-        "Assertion failed" << std::endl << \
-        "File: " << __FILE__ << " - " << \
-        "Line: " << __LINE__ << std::endl << \
-        "Expression: \"" << #expr << "\" - Message: " << msg << std::endl \
-        << "*****" << std::endl; \
-        std::abort(); \
-    }
+#include <boost/container/static_vector.hpp>
 
 #ifdef NDEBUG
     const int FPS = 30;
     constexpr int AI_BASE_DEPTH = 5;
+    #define ASSERT(expr, msg) ((void)0)
 #else
     const int FPS = 5;
     constexpr int AI_BASE_DEPTH = 3;
+    #define ASSERT(expr, msg) \
+        if (!(expr)) { \
+            std::cerr << "*****" << std::endl << \
+            "Assertion failed" << std::endl << \
+            "File: " << __FILE__ << " - " << \
+            "Line: " << __LINE__ << std::endl << \
+            "Expression: \"" << #expr << "\" - Message: " << msg << std::endl \
+            << "*****" << std::endl; \
+            std::abort(); \
+        }
 #endif
 
 // FEN
@@ -207,21 +209,7 @@ enum GameState {
 };
 
 template <typename T, size_t N>
-struct tracked_array {
-    std::array<T, N> data;
-    size_t count;
-
-    void push_back(const T& value) {
-        ASSERT(count < N, "Attempt to push to tracked array past its bounds");
-        data[count++] = value;
-    }
-
-    size_t size() const { return count; }
-    T& operator[](size_t i) { return data[i]; }
-    const T& operator[](size_t i) const { return data[i]; }
-    auto begin() { return data.begin(); }
-    auto end() { return data.begin() + count; }
-};
+using tracked_array = boost::container::static_vector<T, N>; // alias
 
 std::string to_string_piece(PieceType piece);
 std::string to_string_sq(Square sq);
@@ -237,6 +225,16 @@ class Move {
         bool k_castle;
 
         bool operator==(const Move&) const = default;
+
+        Move()
+        : from(NULL_SQ),
+            to(NULL_SQ),
+            moved_piece(NONE),
+            promotion_piece(NONE),
+            is_en_passant(false),
+            q_castle(false),
+            k_castle(false)
+            {}
 
         Move(Square from, Square to, PieceType moved_piece)
         : from(from), 
@@ -276,7 +274,7 @@ class BoardState {
         Colour turn;
         uint8_t castling_rights;
         Square en_passant_square;
-        std::array<Square, BOARD_SIZE> pinned_sqs; // max number of pinned pieces is 8 as there are only 8 directions
+        tracked_array<Square, BOARD_SIZE> pinned_sqs; // max number of pinned pieces is 8 as there are only 8 directions
 
         uint16_t full_move_count;
         uint8_t half_move_count; // half move logic for 50-move draw rule is not yet implemented

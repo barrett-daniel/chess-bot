@@ -26,6 +26,9 @@ target_link_libraries(${PROJECT_NAME} PRIVATE SDL3::SDL3)
 find_package(SDL3_image CONFIG REQUIRED)
 target_link_libraries(${PROJECT_NAME} PRIVATE $<IF:$<TARGET_EXISTS:SDL3_image::SDL3_image-shared>,SDL3_image::SDL3_image-shared,SDL3_image::SDL3_image-static>)
 
+find_package(boost_container CONFIG REQUIRED)
+target_link_libraries(${PROJECT_NAME} PRIVATE Boost::container)
+
 # copy assets to build
 add_custom_command(
         TARGET ${PROJECT_NAME} POST_BUILD
@@ -58,6 +61,9 @@ target_link_libraries(${PROJECT_NAME}_TEST PRIVATE $<IF:$<TARGET_EXISTS:SDL3_ima
 
 find_package(doctest CONFIG REQUIRED)
 target_link_libraries(${PROJECT_NAME}_TEST PRIVATE doctest::doctest)
+
+find_package(boost_container CONFIG REQUIRED)
+target_link_libraries(${PROJECT_NAME} PRIVATE Boost::container)
 
 add_custom_command(
         TARGET ${PROJECT_NAME}_TEST POST_BUILD

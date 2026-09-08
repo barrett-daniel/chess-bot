@@ -3,7 +3,7 @@
 
 // TODO: castling
 
-void encode_king_move_data(Bitboard bb, int from_delta, std::vector<Move>& moves);
+void encode_king_move_data(Bitboard bb, int from_delta, tracked_array<Move, MAX_NUM_MOVES>& moves);
 
 void init_king_attacks() {
     for (Square sq = 0; sq < BOARD_SIZE * BOARD_SIZE; sq++) {
@@ -17,13 +17,13 @@ void init_king_attacks() {
     }
 }
 
-std::vector<Move> get_king_moves(
+tracked_array<Move, MAX_NUM_MOVES> get_king_moves(
     Bitboard from_bb,
     const Bitboard& own_pieces,
     uint8_t castling_rights,
     bool is_white
 ) {
-    std::vector<Move> moves;
+    tracked_array<Move, MAX_NUM_MOVES> moves;
 
     for(auto [dir, mask] : KING_DIRECTIONS) {
         Bitboard bb = shift_dir(from_bb & ~mask, dir) & ~own_pieces;
@@ -65,7 +65,7 @@ std::vector<Move> get_king_moves(
 void encode_king_move_data(
     Bitboard bb, 
     int from_delta,
-    std::vector<Move>& moves
+    tracked_array<Move, MAX_NUM_MOVES>& moves
 ) {
     while(bb) {
         Square to = pop_lsb(bb);

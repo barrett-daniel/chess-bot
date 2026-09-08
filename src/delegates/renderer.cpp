@@ -150,8 +150,8 @@ std::vector<BitboardMeta> Renderer::get_boards_data(const BoardState& bs) const 
 }
 
 
-void Renderer::render_selected_moves(const std::vector<Move>& moves) const {
-    for(Move move : moves) {
+void Renderer::render_selected_moves(const tracked_array<Move, MAX_NUM_MOVES>& moves) const {
+    for(const Move& move : moves) {
         Square bit_position = move.to;
         int i = bit_position % BOARD_SIZE;
         int j = bit_position / BOARD_SIZE;

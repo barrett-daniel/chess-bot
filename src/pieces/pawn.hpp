@@ -9,7 +9,7 @@ Bitboard get_pawn_attack_sqs(
     bool is_white
 );
 
-std::vector<Move> get_pawn_moves(
+tracked_array<Move, MAX_NUM_MOVES> get_pawn_moves(
     Bitboard from_bb,
     bool is_white,
     const Bitboard& enemy_bb,

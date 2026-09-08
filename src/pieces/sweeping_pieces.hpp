@@ -20,19 +20,19 @@ Bitboard get_queen_attack_sqs(
     const Bitboard& enemy_pieces
 );
 
-std::vector<Move> get_rook_moves(
+tracked_array<Move, MAX_NUM_MOVES> get_rook_moves(
     Bitboard from_bb,
     const Bitboard& own_pieces,
     const Bitboard& enemy_pieces
 );
 
-std::vector<Move> get_bishop_moves(
+tracked_array<Move, MAX_NUM_MOVES> get_bishop_moves(
     Bitboard from_bb,
     const Bitboard& own_pieces,
     const Bitboard& enemy_pieces
 );
 
-std::vector<Move> get_queen_moves(
+tracked_array<Move, MAX_NUM_MOVES> get_queen_moves(
     Bitboard from_bb,
     const Bitboard& own_pieces,
     const Bitboard& enemy_pieces
