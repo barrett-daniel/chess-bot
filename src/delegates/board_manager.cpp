@@ -327,8 +327,9 @@ bool BoardManager::is_pinned(Square from) {
     return false;
 }
 
-std::vector<Square> BoardManager::calc_pinned_sqs() {
-    std::vector<Square> pinned_sqs;
+std::array<Square, BOARD_SIZE> BoardManager::calc_pinned_sqs() {
+    std::array<Square, BOARD_SIZE> pinned_sqs{};
+    size_t pinned_count = 0;
     Colour side = bs.turn;
 
     Bitboard king_bb = bs.get_bb(side, PieceType::KING);
@@ -340,7 +341,7 @@ std::vector<Square> BoardManager::calc_pinned_sqs() {
     Bitboard enemy_queens = bs.get_bb(!side, PieceType::QUEEN);
     Bitboard all_pieces   = bs.all_pieces;
 
-    auto check_pins = [this, king_sq, own_pieces, enemy_queens, all_pieces](std::vector<std::pair<int, Bitboard>>& move_directions, Bitboard enemy_bb, std::vector<Square>& pinned_sqs){
+    auto check_pins = [this, king_sq, own_pieces, enemy_queens, all_pieces, &pinned_count](std::vector<std::pair<int, Bitboard>>& move_directions, Bitboard enemy_bb, std::array<Square, BOARD_SIZE>& _pinned_sqs){
         for (auto [dir, _] : move_directions) {
             Square sq = king_sq + dir;
             int candidate = -1;
@@ -356,7 +357,7 @@ std::vector<Square> BoardManager::calc_pinned_sqs() {
                     } else {
                         // Enemy piece?
                         if ((enemy_bb & mask) || (enemy_queens & mask)) {
-                            if (candidate != -1) pinned_sqs.push_back(candidate);
+                            if (candidate != -1) _pinned_sqs[pinned_count++] = candidate;
                         }
                         break; // ray blocked either way
                     }

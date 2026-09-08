@@ -259,7 +259,7 @@ class BoardState {
         Colour turn;
         uint8_t castling_rights;
         Square en_passant_square;
-        std::vector<Square> pinned_sqs;
+        std::array<Square, BOARD_SIZE> pinned_sqs; // max number of pinned pieces is 8 as there are only 8 directions
 
         uint16_t full_move_count;
         uint8_t half_move_count; // half move logic for 50-move draw rule is not yet implemented

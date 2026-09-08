@@ -26,7 +26,7 @@ class BoardManager {
         void inline update_poly_bbs();
 
         bool is_pinned(Square from);
-        std::vector<Square> calc_pinned_sqs();
+        std::array<Square, BOARD_SIZE> calc_pinned_sqs();
         inline bool same_line(Square from, Square to, int dir);
 
         void process_q_castle(Colour side);
