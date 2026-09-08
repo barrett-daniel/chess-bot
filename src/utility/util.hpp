@@ -206,6 +206,23 @@ enum GameState {
     UNFINISHED
 };
 
+template <typename T, size_t N>
+struct tracked_array {
+    std::array<T, N> data;
+    size_t count;
+
+    void push_back(const T& value) {
+        ASSERT(count < N, "Attempt to push to tracked array past its bounds");
+        data[count++] = value;
+    }
+
+    size_t size() const { return count; }
+    T& operator[](size_t i) { return data[i]; }
+    const T& operator[](size_t i) const { return data[i]; }
+    auto begin() { return data.begin(); }
+    auto end() { return data.begin() + count; }
+};
+
 std::string to_string_piece(PieceType piece);
 std::string to_string_sq(Square sq);
 class Move {
