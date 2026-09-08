@@ -14,5 +14,5 @@ std::vector<Move> get_pawn_moves(
     bool is_white,
     const Bitboard& enemy_bb,
     const Bitboard& all_bb,
-    int passant_sq
+    Square passant_sq
 );

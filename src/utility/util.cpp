@@ -114,7 +114,7 @@ std::string to_string(const Bitboard& bb) {
     return ss.str();
 }
 
-std::string to_string_sq(int sq) {
+std::string to_string_sq(Square sq) {
     char file = 'a' + (sq % 8);
     char rank = '0' + (8 - (sq / 8));
     return std::string(1, file) + std::string(1, rank);

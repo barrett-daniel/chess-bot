@@ -27,7 +27,7 @@ void init_pawn_attacks(bool is_white) {
     //
     // i.e. from a given square if a white pawn can attack the two squares diagonally infront of it, if there were
     // two black pawns in those squares, either could attack the white pawn.
-    for (int sq = 0; sq < 64; sq++) {
+    for (Square sq = 0; sq < 64; sq++) {
         Bitboard from_bb = 1ULL << sq;
 
         // calculate what squares a pawn at that index could attack
@@ -45,7 +45,7 @@ std::vector<Move> get_pawn_moves(
     bool is_white,
     const Bitboard& enemy_bb,
     const Bitboard& all_bb,
-    int passant_sq
+    Square passant_sq
 ) {
     uint8_t diag_l_shift, diag_r_shift;
     get_diag_shifts(is_white, &diag_l_shift, &diag_r_shift);
@@ -61,7 +61,7 @@ std::vector<Move> get_pawn_moves(
 
     // construct bitboards for diagonal moves i.e. en-passant and captures
     Bitboard passant_bb = 0;
-    if(passant_sq != -1) set_bit(passant_bb, passant_sq);
+    if(passant_sq != NULL_SQ) set_bit(passant_bb, passant_sq);
 
     Bitboard captures_l = shift_fwd(is_white, from_bb, diag_l_shift) & enemy_bb & ~FILE_H;
     Bitboard passant_l = shift_fwd(is_white, from_bb, diag_l_shift) & passant_bb & ~FILE_H & ~double_push_rank;
@@ -120,8 +120,8 @@ void encode_pawn_move_data(
     long flags
 ) {
     while(bb) {
-        int to = pop_lsb(bb);
-        int from = to + from_delta;
+        Square to = pop_lsb(bb);
+        Square from = to + from_delta;
 
         Move move(from, to, PieceType::PAWN);
         move.is_en_passant = flags & PASSANT;

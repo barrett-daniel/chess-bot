@@ -22,24 +22,24 @@ class BoardManager {
         BoardState& get_bs();
 
     private:
-        void inline update_castling_rights(int move_pos);
+        void inline update_castling_rights(Square move_pos);
         void inline update_poly_bbs();
 
-        bool is_pinned(int from);
-        std::vector<int> calc_pinned_sqs();
-        inline bool same_line(int from, int to, int dir);
+        bool is_pinned(Square from);
+        std::vector<Square> calc_pinned_sqs();
+        inline bool same_line(Square from, Square to, int dir);
 
         void process_q_castle(Colour side);
         void process_k_castle(Colour side);
         void process_castle(
-            int rook_from, int rook_to, 
-            int king_from, int king_to, Colour side
+            Square rook_from, Square rook_to,
+            Square king_from, Square king_to, Colour side
         );
 
-        bool valid_q_castle(int move_from, Colour side, bool in_check);
-        bool valid_k_castle(int move_from, Colour side, bool in_check);
-        bool valid_castle(int move_from, int rook_pos, Colour side, bool king_castle);
-        Bitboard get_delta_bb(int a, int b);
+        bool valid_q_castle(Square move_from, Colour side, bool in_check);
+        bool valid_k_castle(Square move_from, Colour side, bool in_check);
+        bool valid_castle(Square move_from, Square rook_pos, Colour side, bool king_castle);
+        Bitboard get_delta_bb(Square a, Square b);
 
         BoardState bs;
         std::stack<BoardState> history; 

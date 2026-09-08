@@ -39,7 +39,7 @@ TEST_SUITE("Win At Chess") {
     /**
      * Converts the string representing a square on the board to its index position
      */
-    inline int from_string_sq(const std::string& s) {
+    inline Square from_string_sq(const std::string& s) {
         if (s.size() != 2) throw std::invalid_argument("Bad square string: " + s);
 
         int file = s[0] - 'a';
@@ -62,7 +62,7 @@ TEST_SUITE("Win At Chess") {
 
         // Destination square is always the last two characters at this point
         std::string dest_str = san.substr(san.size() - 2);
-        int to = from_string_sq(dest_str);
+        Square to = from_string_sq(dest_str);
         san.erase(san.size() - 2);
 
         // remove capture suffix (x)

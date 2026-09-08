@@ -22,7 +22,7 @@ Bitboard get_sweep(
 
 void encode_sweep_move_data(
     Bitboard bb, 
-    int from, 
+    Square from,
     std::vector<Move>& moves, 
     PieceType type
 );
@@ -40,7 +40,7 @@ Bitboard get_rook_attack_sqs(
     Bitboard bb = 0;
 
     while(from_bb) {
-        int from = pop_lsb(from_bb);
+        Square from = pop_lsb(from_bb);
         Bitboard piece_bb = 1ULL << from;
 
         for(auto [dir, mask] : ROOK_DIRECTIONS) {
@@ -60,7 +60,7 @@ Bitboard get_bishop_attack_sqs(
     Bitboard bb = 0;
 
     while(from_bb) {
-        int from = pop_lsb(from_bb);
+        Square from = pop_lsb(from_bb);
         Bitboard piece_bb = 1ULL << from;
 
         for(auto [dir, mask] : BISHOP_DIRECTIONS) {
@@ -142,7 +142,7 @@ std::vector<Move> get_sweep_moves(
 
     // do each separately
     while(from_bb) {
-        int from = pop_lsb(from_bb);
+        Square from = pop_lsb(from_bb);
         Bitboard piece_bb = 1ULL << from;
 
         for(auto [dir, mask] : directions) {
@@ -188,9 +188,9 @@ Bitboard get_sweep(
     return attacks;
 }
 
-void encode_sweep_move_data(Bitboard bb, int from, std::vector<Move>& moves, PieceType type) {
+void encode_sweep_move_data(Bitboard bb, Square from, std::vector<Move>& moves, PieceType type) {
     while(bb) {
-        int to = pop_lsb(bb);
+        Square to = pop_lsb(bb);
         moves.emplace_back(from, to, type);
     }
 }

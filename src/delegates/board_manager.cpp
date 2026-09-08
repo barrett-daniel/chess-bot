@@ -82,7 +82,7 @@ BoardManager::BoardManager(const std::string fen) {
     // parse en passant target square, e.g. "e3" or "-"
     std::string ep_config_str = components[FEN_EN_PASSANT_CONFIG];
     if (ep_config_str == "-") {
-        bs.en_passant_square = -1;
+        bs.en_passant_square = NULL_SQ;
     } else {
         int file = ep_config_str[0] - 'a';
         int rank = ep_config_str[1] - '0';
@@ -117,7 +117,7 @@ void BoardManager::make_move(const Move& move) {
 
     Colour side = bs.turn;
     history.push(bs);
-    bs.en_passant_square = -1;
+    bs.en_passant_square = NULL_SQ;
 
     if (side == BLACK) {
         ++bs.full_move_count;
@@ -173,7 +173,7 @@ void BoardManager::undo_move() {
     history.pop();
 }
 
-void inline BoardManager::update_castling_rights(int move_pos) {
+void inline BoardManager::update_castling_rights(Square move_pos) {
     // updating white castling rights
     if(bs.castling_rights & W_QUEEN_CASTLE_MASK || bs.castling_rights & W_KING_CASTLE_MASK) {
         if(move_pos == W_KING_START_POS) [[unlikely]] {
@@ -205,7 +205,7 @@ void inline BoardManager::update_poly_bbs() {
 
 void BoardManager::process_q_castle(Colour side) {
     LOG_TRACE;
-    int rook_from, rook_to, king_from, king_to;
+    Square rook_from, rook_to, king_from, king_to;
     if(side == Colour::WHITE) {
         rook_from = W_QUEEN_ROOK_START_POS;
         rook_to   = W_QUEEN_ROOK_CASTLE_TO;
@@ -222,7 +222,7 @@ void BoardManager::process_q_castle(Colour side) {
 
 void BoardManager::process_k_castle(Colour side) {
     LOG_TRACE;
-    int rook_from, rook_to, king_from, king_to;
+    Square rook_from, rook_to, king_from, king_to;
     if(side == Colour::WHITE) {
         rook_from = W_KING_ROOK_START_POS;
         rook_to   = W_KING_ROOK_CASTLE_TO;
@@ -238,8 +238,8 @@ void BoardManager::process_k_castle(Colour side) {
 }
 
 void BoardManager::process_castle(
-    int rook_from, int rook_to, 
-    int king_from, int king_to, Colour side
+    Square rook_from, Square rook_to,
+    Square king_from, Square king_to, Colour side
 ) {
     LOG_TRACE;
     Bitboard& king_bb = bs.get_bb(side, PieceType::KING);
@@ -320,19 +320,19 @@ std::vector<Move> BoardManager::get_legal_moves(const std::vector<Move>& moves) 
     return get_legal_moves(moves, is_in_check(bs.turn));
 }
 
-bool BoardManager::is_pinned(int from) {
-    for(int pinned_sq : bs.pinned_sqs) {
+bool BoardManager::is_pinned(Square from) {
+    for(Square pinned_sq : bs.pinned_sqs) {
         if(from == pinned_sq) return true;
     }
     return false;
 }
 
-std::vector<int> BoardManager::calc_pinned_sqs() {
-    std::vector<int> pinned_sqs;
+std::vector<Square> BoardManager::calc_pinned_sqs() {
+    std::vector<Square> pinned_sqs;
     Colour side = bs.turn;
 
     Bitboard king_bb = bs.get_bb(side, PieceType::KING);
-    int king_sq = pop_lsb(king_bb);
+    Square king_sq = pop_lsb(king_bb);
 
     Bitboard own_pieces   = bs.get_bb(side, PieceType::NONE);
     Bitboard enemy_rooks  = bs.get_bb(!side, PieceType::ROOK);
@@ -340,9 +340,9 @@ std::vector<int> BoardManager::calc_pinned_sqs() {
     Bitboard enemy_queens = bs.get_bb(!side, PieceType::QUEEN);
     Bitboard all_pieces   = bs.all_pieces;
 
-    auto check_pins = [this, king_sq, own_pieces, enemy_queens, all_pieces](std::vector<std::pair<int, Bitboard>>& move_directions, Bitboard enemy_bb, std::vector<int>& pinned_sqs){
+    auto check_pins = [this, king_sq, own_pieces, enemy_queens, all_pieces](std::vector<std::pair<int, Bitboard>>& move_directions, Bitboard enemy_bb, std::vector<Square>& pinned_sqs){
         for (auto [dir, _] : move_directions) {
-            int sq = king_sq + dir;
+            Square sq = king_sq + dir;
             int candidate = -1;
 
             while (sq >= 0 && sq < 64 && same_line(king_sq, sq, dir)) {
@@ -371,9 +371,9 @@ std::vector<int> BoardManager::calc_pinned_sqs() {
     return pinned_sqs;
 }
 
-inline bool BoardManager::same_line(int from, int to, int dir) {
-    int from_rank = from / 8, from_file = from % 8;
-    int to_rank   = to / 8,   to_file   = to % 8;
+inline bool BoardManager::same_line(Square from, Square to, int dir) {
+    Square from_rank = from / 8, from_file = from % 8;
+    Square to_rank   = to / 8,   to_file   = to % 8;
 
     switch (dir) {
         case  1: case -1: return from_rank == to_rank;       // horizontal
@@ -384,40 +384,40 @@ inline bool BoardManager::same_line(int from, int to, int dir) {
     }
 }
 
-bool BoardManager::valid_q_castle(int move_from, Colour side, bool in_check) {
+bool BoardManager::valid_q_castle(Square move_from, Colour side, bool in_check) {
     LOG_TRACE;
 
     if (in_check) return false;
 
-    int rook_pos = side == WHITE ? W_QUEEN_ROOK_START_POS : B_QUEEN_ROOK_START_POS;
+    Square rook_pos = side == WHITE ? W_QUEEN_ROOK_START_POS : B_QUEEN_ROOK_START_POS;
     return valid_castle(move_from, rook_pos, side, false);
 }
 
-bool BoardManager::valid_k_castle(int move_from, Colour side, bool in_check) {
+bool BoardManager::valid_k_castle(Square move_from, Colour side, bool in_check) {
     LOG_TRACE;
 
     if (in_check) return false;
 
-    int rook_pos = side == WHITE ? W_KING_ROOK_START_POS : B_KING_ROOK_START_POS;
+    Square rook_pos = side == WHITE ? W_KING_ROOK_START_POS : B_KING_ROOK_START_POS;
     return valid_castle(move_from, rook_pos, side, true);
 
 }
 
 // NOTE: does not consider if the king is already in check such should be precomputed
-bool BoardManager::valid_castle(int move_from, int rook_pos, Colour side, bool king_castle) {
+bool BoardManager::valid_castle(Square move_from, Square rook_pos, Colour side, bool king_castle) {
     LOG_TRACE;
 
     // Check that no pieces are between king and rook
     Bitboard delta_bb = get_delta_bb(move_from, rook_pos);
     if ((delta_bb & bs.all_pieces) != 0) return false;
 
-    int king_from = move_from;
-    int king_to   = king_castle ? move_from + 2 : move_from - 2;
-    std::vector<int> king_path;
+    Square king_from = move_from;
+    Square king_to   = king_castle ? move_from + 2 : move_from - 2;
+    std::vector<Square> king_path;
 
     king_castle
-        ? king_path = {king_from, king_from + 1, king_to}
-        : king_path = {king_from, king_from - 1, king_to};
+        ? king_path = {king_from, static_cast<Square>(king_from + 1), king_to}
+        : king_path = {king_from, static_cast<Square>(king_from - 1), king_to};
 
     const Bitboard& enemy_knights = bs.get_bb(!side, PieceType::KNIGHT);
     const Bitboard& enemy_king    = bs.get_bb(!side, PieceType::KING);
@@ -433,7 +433,7 @@ bool BoardManager::valid_castle(int move_from, int rook_pos, Colour side, bool k
     const Bitboard own_occupancy       = bs.get_bb(side, PieceType::NONE);
 
     // Check each square for attacks
-    for (int sq : king_path) {
+    for (Square sq : king_path) {
         const Bitboard sq_bb = 1ULL << sq;
 
         // Non-sliding pieces
@@ -451,10 +451,10 @@ bool BoardManager::valid_castle(int move_from, int rook_pos, Colour side, bool k
 
 
 // helper lambda which construct a bb where all values are true between two values
-Bitboard BoardManager::get_delta_bb(int a, int b) {
+Bitboard BoardManager::get_delta_bb(Square a, Square b) {
     LOG_TRACE;
-    int from = std::max(a, b);
-    int to = std::min(a, b);
+    Square from = std::max(a, b);
+    Square to = std::min(a, b);
 
     uint64_t upper_mask = (1ULL << from) - 1;
     uint64_t lower_mask = (1ULL << (to + 1)) - 1;
@@ -495,7 +495,7 @@ bool BoardManager::is_in_check(Colour side) {
     if((rook_attacks & king_bb) != 0) return true;
 
     // check for attack array
-    int king_sq = pop_lsb(king_bb);
+    Square king_sq = pop_lsb(king_bb);
     if (KNIGHT_ATTACKS[king_sq] & bs.get_bb(!side, PieceType::KNIGHT)) return true;
     if (KING_ATTACKS[king_sq]   & bs.get_bb(!side, PieceType::KING))   return true;
     if (side == Colour::WHITE ? PAWN_ATTACKS_B[king_sq] & bs.b_pawns : PAWN_ATTACKS_W[king_sq] & bs.w_pawns) return true;

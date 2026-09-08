@@ -8,7 +8,7 @@ InputManager::InputManager(const Colour player, BoardManager& board_manager)
   : player(player),
     board_manager(board_manager),
     running(true),
-    selected_sq(-1)
+    selected_sq(NULL_SQ)
 {
     LOG_TRACE;
 }
@@ -47,7 +47,7 @@ void InputManager::handle_click(SDL_Event e) {
 
 void InputManager::handle_right_click() {
     LOG_TRACE;
-    selected_sq = -1;
+    selected_sq = NULL_SQ;
 }
 
 void InputManager::handle_left_click(int x, int y) {
@@ -56,7 +56,7 @@ void InputManager::handle_left_click(int x, int y) {
     // translate click_pos for black
     int board_x = (player == Colour::BLACK) ? (BOARD_SIZE - 1 - x) : x;
     int board_y = (player == Colour::BLACK) ? (BOARD_SIZE - 1 - y) : y;
-    int click_pos = board_x + (board_y * BOARD_SIZE);
+    Square click_pos = board_x + (board_y * BOARD_SIZE);
     LOG("Click identified at: " + to_string_coord(click_pos));
 
     Bitboard own_pieces = board_manager.get_bs().get_bb(player, PieceType::NONE);
@@ -68,7 +68,7 @@ void InputManager::handle_left_click(int x, int y) {
 
     // given a square is already selected, assume the player is trying to
     // make a move, and attempt to make it
-    if(selected_sq != -1) handle_attempted_move(click_pos);
+    if(selected_sq != NULL_SQ) handle_attempted_move(click_pos);
 }
 
 std::vector<Move> InputManager::get_selected_moves() {
@@ -80,7 +80,7 @@ std::vector<Move> InputManager::get_selected_moves() {
     return board_manager.get_legal_moves(moves);
 }
 
-void InputManager::handle_attempted_move(int click_pos) {
+void InputManager::handle_attempted_move(Square click_pos) {
     LOG_TRACE;
 
     std::vector<Move> legal_moves = get_selected_moves();
@@ -100,7 +100,7 @@ void InputManager::handle_attempted_move(int click_pos) {
 }
 
 bool InputManager::is_any_piece_selected() const {
-    return selected_sq != -1;
+    return selected_sq != NULL_SQ;
 }
 
 PieceType InputManager::get_prom_choice() {

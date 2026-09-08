@@ -47,6 +47,8 @@ constexpr int WINDOW_DIM = BOARD_SIZE * CELL_SIZE;
 
 // Bitboard & Board
 typedef uint64_t Bitboard;
+typedef uint8_t Square;
+constexpr Square NULL_SQ = 64;
 
 extern Bitboard KNIGHT_ATTACKS[BOARD_SIZE * BOARD_SIZE];
 extern Bitboard PAWN_ATTACKS_W[BOARD_SIZE * BOARD_SIZE];
@@ -80,102 +82,103 @@ constexpr uint8_t W_KING_CASTLE_MASK  = 0b00000100;
 constexpr uint8_t B_QUEEN_CASTLE_MASK = 0b00000010;
 constexpr uint8_t B_KING_CASTLE_MASK  = 0b00000001;
 
-constexpr int W_KING_START_POS = 60;
-constexpr int B_KING_START_POS = 4;
+constexpr Square W_KING_START_POS = 60;
+constexpr Square B_KING_START_POS = 4;
 
-constexpr int W_QUEEN_ROOK_START_POS = 56;
-constexpr int W_KING_ROOK_START_POS  = 63;
-constexpr int B_QUEEN_ROOK_START_POS = 0;
-constexpr int B_KING_ROOK_START_POS  = 7;
+constexpr Square W_QUEEN_ROOK_START_POS = 56;
+constexpr Square W_KING_ROOK_START_POS  = 63;
+constexpr Square B_QUEEN_ROOK_START_POS = 0;
+constexpr Square B_KING_ROOK_START_POS  = 7;
 
-constexpr int W_QUEEN_ROOK_CASTLE_TO  = 59;
-constexpr int W_KING_ROOK_CASTLE_TO   = 61;
-constexpr int B_QUEEN_ROOK_CASTLE_TO  = 3;
-constexpr int B_KING_ROOK_CASTLE_TO   = 5;
+constexpr Square W_QUEEN_ROOK_CASTLE_TO  = 59;
+constexpr Square W_KING_ROOK_CASTLE_TO   = 61;
+constexpr Square B_QUEEN_ROOK_CASTLE_TO  = 3;
+constexpr Square B_KING_ROOK_CASTLE_TO   = 5;
 
-constexpr int W_KING_CASTLE_TO = 62;
-constexpr int W_QUEEN_CASTLE_TO = 58;
-constexpr int B_KING_CASTLE_TO = 6;
-constexpr int B_QUEEN_CASTLE_TO = 2;
+constexpr Square W_KING_CASTLE_TO = 62;
+constexpr Square W_QUEEN_CASTLE_TO = 58;
+constexpr Square B_KING_CASTLE_TO = 6;
+constexpr Square B_QUEEN_CASTLE_TO = 2;
 
 // Sqs - for testing
-constexpr int A8 = 0;
-constexpr int B8 = 1;
-constexpr int C8 = 2;
-constexpr int D8 = 3;
-constexpr int E8 = 4;
-constexpr int F8 = 5;
-constexpr int G8 = 6;
-constexpr int H8 = 7;
+constexpr Square A8 = 0;
+constexpr Square B8 = 1;
+constexpr Square C8 = 2;
+constexpr Square D8 = 3;
+constexpr Square E8 = 4;
+constexpr Square F8 = 5;
+constexpr Square G8 = 6;
+constexpr Square H8 = 7;
 
-constexpr int A7 = 8;
-constexpr int B7 = 9;
-constexpr int C7 = 10;
-constexpr int D7 = 11;
-constexpr int E7 = 12;
-constexpr int F7 = 13;
-constexpr int G7 = 14;
-constexpr int H7 = 15;
+constexpr Square A7 = 8;
+constexpr Square B7 = 9;
+constexpr Square C7 = 10;
+constexpr Square D7 = 11;
+constexpr Square E7 = 12;
+constexpr Square F7 = 13;
+constexpr Square G7 = 14;
+constexpr Square H7 = 15;
 
-constexpr int A6 = 16;
-constexpr int B6 = 17;
-constexpr int C6 = 18;
-constexpr int D6 = 19;
-constexpr int E6 = 20;
-constexpr int F6 = 21;
-constexpr int G6 = 22;
-constexpr int H6 = 23;
+constexpr Square A6 = 16;
+constexpr Square B6 = 17;
+constexpr Square C6 = 18;
+constexpr Square D6 = 19;
+constexpr Square E6 = 20;
+constexpr Square F6 = 21;
+constexpr Square G6 = 22;
+constexpr Square H6 = 23;
 
-constexpr int A5 = 24;
-constexpr int B5 = 25;
-constexpr int C5 = 26;
-constexpr int D5 = 27;
-constexpr int E5 = 28;
-constexpr int F5 = 29;
-constexpr int G5 = 30;
-constexpr int H5 = 31;
+constexpr Square A5 = 24;
+constexpr Square B5 = 25;
+constexpr Square C5 = 26;
+constexpr Square D5 = 27;
+constexpr Square E5 = 28;
+constexpr Square F5 = 29;
+constexpr Square G5 = 30;
+constexpr Square H5 = 31;
 
-constexpr int A4 = 32;
-constexpr int B4 = 33;
-constexpr int C4 = 34;
-constexpr int D4 = 35;
-constexpr int E4 = 36;
-constexpr int F4 = 37;
-constexpr int G4 = 38;
-constexpr int H4 = 39;
+constexpr Square A4 = 32;
+constexpr Square B4 = 33;
+constexpr Square C4 = 34;
+constexpr Square D4 = 35;
+constexpr Square E4 = 36;
+constexpr Square F4 = 37;
+constexpr Square G4 = 38;
+constexpr Square H4 = 39;
 
-constexpr int A3 = 40;
-constexpr int B3 = 41;
-constexpr int C3 = 42;
-constexpr int D3 = 43;
-constexpr int E3 = 44;
-constexpr int F3 = 45;
-constexpr int G3 = 46;
-constexpr int H3 = 47;
+constexpr Square A3 = 40;
+constexpr Square B3 = 41;
+constexpr Square C3 = 42;
+constexpr Square D3 = 43;
+constexpr Square E3 = 44;
+constexpr Square F3 = 45;
+constexpr Square G3 = 46;
+constexpr Square H3 = 47;
 
-constexpr int A2 = 48;
-constexpr int B2 = 49;
-constexpr int C2 = 50;
-constexpr int D2 = 51;
-constexpr int E2 = 52;
-constexpr int F2 = 53;
-constexpr int G2 = 54;
-constexpr int H2 = 55;
+constexpr Square A2 = 48;
+constexpr Square B2 = 49;
+constexpr Square C2 = 50;
+constexpr Square D2 = 51;
+constexpr Square E2 = 52;
+constexpr Square F2 = 53;
+constexpr Square G2 = 54;
+constexpr Square H2 = 55;
 
-constexpr int A1 = 56;
-constexpr int B1 = 57;
-constexpr int C1 = 58;
-constexpr int D1 = 59;
-constexpr int E1 = 60;
-constexpr int F1 = 61;
-constexpr int G1 = 62;
-constexpr int H1 = 63;
+constexpr Square A1 = 56;
+constexpr Square B1 = 57;
+constexpr Square C1 = 58;
+constexpr Square D1 = 59;
+constexpr Square E1 = 60;
+constexpr Square F1 = 61;
+constexpr Square G1 = 62;
+constexpr Square H1 = 63;
 
 // Move constants
 extern std::vector<std::pair<int, Bitboard>> ROOK_DIRECTIONS;
 extern std::vector<std::pair<int, Bitboard>> BISHOP_DIRECTIONS;
 extern std::vector<std::pair<int, Bitboard>> KING_DIRECTIONS;
 extern std::vector<std::pair<int, Bitboard>> KNIGHT_DIRECTIONS;
+constexpr uint8_t MAX_NUM_MOVES = 218; // source: https://lichess.org/@/Tobs40/blog/why-a-reachable-position-can-have-at-most-218-playable-moves/a5xdxeqs
 
 // Data types
 enum Colour {
@@ -204,11 +207,11 @@ enum GameState {
 };
 
 std::string to_string_piece(PieceType piece);
-std::string to_string_sq(int sq);
+std::string to_string_sq(Square sq);
 class Move {
     public:
-        int from;
-        int to;
+        Square from;
+        Square to;
         PieceType moved_piece;
 
         PieceType promotion_piece;
@@ -218,7 +221,7 @@ class Move {
 
         bool operator==(const Move&) const = default;
 
-        Move(int from, int to, PieceType moved_piece)
+        Move(Square from, Square to, PieceType moved_piece)
         : from(from), 
             to(to),
             moved_piece(moved_piece), 
@@ -229,7 +232,7 @@ class Move {
         {}
 
         std::string to_string() const {
-            std::string s = to_string_piece(moved_piece) + to_string_sq(from) + to_string_sq(to);
+            std::string s = to_string_sq(from) + to_string_sq(to);
             if (promotion_piece != NONE) {
                 switch (promotion_piece) {
                     case QUEEN:  s += 'q'; break;
@@ -255,8 +258,8 @@ class BoardState {
 
         Colour turn;
         uint8_t castling_rights;
-        int en_passant_square;
-        std::vector<int> pinned_sqs;
+        Square en_passant_square;
+        std::vector<Square> pinned_sqs;
 
         uint16_t full_move_count;
         uint8_t half_move_count; // half move logic for 50-move draw rule is not yet implemented
@@ -264,7 +267,7 @@ class BoardState {
         BoardState()
             : w_pawns(0), w_knights(0), w_bishops(0), w_rooks(0), w_queens(0), w_king(0),
             b_pawns(0), b_knights(0), b_bishops(0), b_rooks(0), b_queens(0), b_king(0),
-            w_pieces(0), b_pieces(0), all_pieces(0)
+            w_pieces(0), b_pieces(0), all_pieces(0), en_passant_square(NULL_SQ)
         {}
 
         Bitboard& get_bb(Colour side, PieceType type) {
@@ -314,21 +317,21 @@ Bitboard shift_dir(Bitboard bb, int dir);
 void log_bitboard(const Bitboard& bb);
 bool is_game_over(GameState state);
 
-constexpr inline void set_bit(Bitboard& bb, int pos) {
+constexpr inline void set_bit(Bitboard& bb, Square pos) {
     bb |= (1ULL << pos);
 }
 
-constexpr inline void clear_bit(Bitboard& bb, int pos) {
+constexpr inline void clear_bit(Bitboard& bb, Square pos) {
     bb &= ~(1ULL << pos);
 }
 
-constexpr inline bool is_bit(const Bitboard& bb, int pos) {
+constexpr inline bool is_bit(const Bitboard& bb, Square pos) {
     return (bb & (1ULL << pos)) != 0;
 }
 
 // pops the LSB of a bitboard -> return index of bit
-constexpr inline int pop_lsb(uint64_t &bb) {
-    int index = __builtin_ctzll(bb);
+constexpr inline Square pop_lsb(Bitboard &bb) {
+    Square index = __builtin_ctzll(bb);
     bb &= bb - 1;
     return index;
 }

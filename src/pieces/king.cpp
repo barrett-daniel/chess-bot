@@ -3,10 +3,10 @@
 
 // TODO: castling
 
-void encode_king_move_data(Bitboard bb, int from, std::vector<Move>& moves);
+void encode_king_move_data(Bitboard bb, int from_delta, std::vector<Move>& moves);
 
 void init_king_attacks() {
-    for (int sq = 0; sq < BOARD_SIZE * BOARD_SIZE; sq++) {
+    for (Square sq = 0; sq < BOARD_SIZE * BOARD_SIZE; sq++) {
         Bitboard bb = 0ULL;
         Bitboard from_bb = 1ULL << sq;
 
@@ -39,10 +39,10 @@ std::vector<Move> get_king_moves(
         ? castling_rights & W_KING_CASTLE_MASK 
         : castling_rights & B_KING_CASTLE_MASK;
 
-    int castle_from = is_white ? W_KING_START_POS : B_KING_START_POS;
+    Square castle_from = is_white ? W_KING_START_POS : B_KING_START_POS;
 
     if(can_queen_castle) {
-        int queen_castle_to = is_white ? W_QUEEN_CASTLE_TO : B_QUEEN_CASTLE_TO;
+        Square queen_castle_to = is_white ? W_QUEEN_CASTLE_TO : B_QUEEN_CASTLE_TO;
 
         Move move(castle_from, queen_castle_to, PieceType::KING);
         move.q_castle = true;
@@ -51,7 +51,7 @@ std::vector<Move> get_king_moves(
     }
 
     if(can_king_castle) {
-        int king_castle_to = is_white ? W_KING_CASTLE_TO : B_KING_CASTLE_TO;
+        Square king_castle_to = is_white ? W_KING_CASTLE_TO : B_KING_CASTLE_TO;
 
         Move move(castle_from, king_castle_to, PieceType::KING);
         move.k_castle = true;
@@ -64,12 +64,12 @@ std::vector<Move> get_king_moves(
 
 void encode_king_move_data(
     Bitboard bb, 
-    int from_delta, 
+    int from_delta,
     std::vector<Move>& moves
 ) {
     while(bb) {
-        int to = pop_lsb(bb);
-        int from = to + from_delta;
+        Square to = pop_lsb(bb);
+        Square from = to + from_delta;
         moves.emplace_back(from, to, PieceType::KING);
     }
 }

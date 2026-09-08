@@ -75,7 +75,7 @@ TEST_SUITE("PERFT Tests") {
     }
 
     TEST_CASE("Position 3") {
-        static const std::vector<uint64_t> expected = {48, 2039, 97862, 4085603, 193690690, 8031647685};
+        static const std::vector<uint64_t> expected = {14, 191, 2812, 43238, 674624, 11030083};
         int depth = GENERATE(1,2,3,4,5);
         perft_test(POSITION_THREE, expected, depth);
     }

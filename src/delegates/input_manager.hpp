@@ -23,11 +23,11 @@ class InputManager {
         void handle_click(SDL_Event e);
         void handle_right_click();
         void handle_left_click(int x, int y);
-        void handle_attempted_move(int click_pos);
+        void handle_attempted_move(Square click_pos);
         
         Colour player;
         BoardManager& board_manager;
         bool running;
-        int selected_sq;
+        Square selected_sq;
         SDL_Texture* highlight_tex;
 };

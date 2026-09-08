@@ -152,7 +152,7 @@ std::vector<BitboardMeta> Renderer::get_boards_data(const BoardState& bs) const 
 
 void Renderer::render_selected_moves(const std::vector<Move>& moves) const {
     for(Move move : moves) {
-        uint8_t bit_position = move.to;
+        Square bit_position = move.to;
         int i = bit_position % BOARD_SIZE;
         int j = bit_position / BOARD_SIZE;
 

@@ -3,6 +3,8 @@
 #include "../utility/logger.hpp"
 #include "../pieces/pieces.hpp"
 
+std::vector<Move> get_moves(Colour side, BoardState& bs, PieceType type);
+
 std::vector<Move> get_moves(Colour side, BoardState& bs, int pos) {
     LOG_TRACE;
     Bitboard enemy_pieces = bs.get_bb(!side, PieceType::NONE);
