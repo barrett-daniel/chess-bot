@@ -7,6 +7,7 @@
 
 class BoardManager {
     public:
+        BoardManager() = default;
         BoardManager(std::string fen);
 
         void make_move(const Move& move);
