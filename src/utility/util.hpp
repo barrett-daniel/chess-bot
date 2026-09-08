@@ -203,6 +203,7 @@ enum GameState {
     UNFINISHED
 };
 
+std::string to_string_piece(PieceType piece);
 std::string to_string_sq(int sq);
 class Move {
     public:
@@ -228,7 +229,7 @@ class Move {
         {}
 
         std::string to_string() const {
-            std::string s = to_string_sq(from) + to_string_sq(to);
+            std::string s = to_string_piece(moved_piece) + to_string_sq(from) + to_string_sq(to);
             if (promotion_piece != NONE) {
                 switch (promotion_piece) {
                     case QUEEN:  s += 'q'; break;
@@ -304,7 +305,8 @@ class BoardState {
         }
 };
 
-std::string to_string(Colour colour);
+std::string to_string_piece_colour(PieceType piece, Colour side);
+std::string to_string_colour(Colour colour);
 std::string to_string_coord(int coord);
 std::string to_string(const Bitboard& board);
 bool contains(const std::vector<Move>& moves, const Move& move);

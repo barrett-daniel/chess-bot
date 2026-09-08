@@ -1,4 +1,7 @@
 #include "util.hpp"
+
+#include <algorithm>
+
 #include "logger.hpp"
 
 // precomputed bitboards of: for the given index (which is a square on the board), 1 if a piece of the
@@ -52,7 +55,29 @@ bool contains(const std::vector<Move>& moves, const Move& move) {
     return flag;
 }
 
-std::string to_string(Colour colour) {
+std::string to_string_piece(PieceType piece) {
+    switch (piece) {
+        case PAWN:   return "";
+        case KNIGHT: return "n";
+        case BISHOP: return "b";
+        case ROOK:   return "r";
+        case QUEEN:  return "q";
+        case KING:   return "k";
+        case NONE:   return "NONE";
+    }
+}
+
+std::string to_string_piece_colour(PieceType piece, Colour side) {
+    std::string piece_str = to_string_piece(piece);
+
+    if (side == WHITE) {
+        std::transform(piece_str.begin(), piece_str.end(), piece_str.begin(), ::toupper);
+    }
+
+    return piece_str;
+}
+
+std::string to_string_colour(Colour colour) {
     switch (colour) {
         case Colour::WHITE: return "WHITE";
         case Colour::BLACK: return "BLACK";

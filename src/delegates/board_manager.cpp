@@ -163,7 +163,7 @@ void BoardManager::make_move(const Move& move) {
     update_poly_bbs();
     bs.turn = !bs.turn;
     bs.pinned_sqs = calc_pinned_sqs();
-    LOG("Alternating turn, turn is now: " + to_string(bs.turn));
+    LOG("Alternating turn, turn is now: " + to_string_colour(bs.turn));
 }
 
 void BoardManager::undo_move() {
