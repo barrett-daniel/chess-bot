@@ -346,7 +346,7 @@ constexpr inline bool is_bit(const Bitboard& bb, Square pos) {
 
 // pops the LSB of a bitboard -> return index of bit
 constexpr inline Square pop_lsb(Bitboard &bb) {
-    Square index = __builtin_ctzll(bb);
+    Square index = std::countr_zero(bb);
     bb &= bb - 1;
     return index;
 }
