@@ -14,12 +14,6 @@ Bitboard get_bishop_attack_sqs(
     const Bitboard& enemy_pieces
 );
 
-Bitboard get_queen_attack_sqs(
-    Bitboard from_bb,
-    const Bitboard& own_pieces,
-    const Bitboard& enemy_pieces
-);
-
 tracked_array<Move, MAX_NUM_MOVES> get_rook_moves(
     Bitboard from_bb,
     const Bitboard& own_pieces,

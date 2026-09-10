@@ -2,6 +2,7 @@
 
 #include "../utility/logger.hpp"
 #include "../pieces/pieces.hpp"
+#include "pieces/magic_bitboard.hpp"
 
 tracked_array<Move, MAX_NUM_MOVES> get_moves(Colour side, BoardState& bs, PieceType type);
 
@@ -175,4 +176,5 @@ void initalise_attack_arrays() {
     init_king_attacks();
     init_pawn_attacks(false);
     init_pawn_attacks(true);
+    init_magic_bbs();
 }

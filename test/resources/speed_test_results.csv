@@ -6,3 +6,4 @@ Version Tag, Position 1 (ms), Position 2 (ms), Position 3 (ms), Position 4 (ms),
 custom static vector,823788, 1426034, 72144, 2152527, 2808147, 1478073
 boost static vector (improper move ordering),273551, 2357271, 41515, 782027, 721025, 1972281
 1.2 boost static vector (proper move ordering),509936, 889455, 36367, 1376906, 1934985, 801118
+,419926, 534235, 18415, 847289, 1363361, 681220
