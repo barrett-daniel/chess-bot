@@ -78,7 +78,7 @@ void Renderer::render_board(const BoardState& bs) const {
             // Determine which board index to check next
             // this is inverted if the player is black to flip the POV of the rendering
             int board_i = (player == Colour::BLACK) ? (BOARD_SIZE - 1 - i) : i;
-            int board_j = (player == Colour::BLACK) ? (BOARD_SIZE - 1 - j) : j;
+            int board_j = (player == Colour::BLACK) ? j : (BOARD_SIZE - 1 - j);
             uint8_t bit_position = board_i + (board_j * BOARD_SIZE);
 
             SDL_Texture* tex = nullptr;
@@ -154,7 +154,7 @@ void Renderer::render_selected_moves(const tracked_array<Move, MAX_NUM_MOVES>& m
     for(const Move& move : moves) {
         Square bit_position = move.to;
         int i = bit_position % BOARD_SIZE;
-        int j = bit_position / BOARD_SIZE;
+        int j = BOARD_SIZE - 1 - (bit_position / BOARD_SIZE);
 
         int board_i = (player == Colour::BLACK) ? (BOARD_SIZE - 1 - i) : i;
         int board_j = (player == Colour::BLACK) ? (BOARD_SIZE - 1 - j) : j;

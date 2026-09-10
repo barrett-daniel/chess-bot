@@ -55,7 +55,7 @@ void InputManager::handle_left_click(int x, int y) {
 
     // translate click_pos for black
     int board_x = (player == Colour::BLACK) ? (BOARD_SIZE - 1 - x) : x;
-    int board_y = (player == Colour::BLACK) ? (BOARD_SIZE - 1 - y) : y;
+    int board_y = (player == Colour::BLACK) ? y : (BOARD_SIZE - 1 - y);  // branches swapped
     Square click_pos = board_x + (board_y * BOARD_SIZE);
     LOG("Click identified at: " + to_string_coord(click_pos));
 

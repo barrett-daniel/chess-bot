@@ -27,11 +27,11 @@ BoardManager::BoardManager(const std::string fen) {
 
     // initalise board data
     std::string board_config_str = components[FEN_BOARD_CONFIG];
-    int i = 0, j = 0;
+    int i = 0, j = 7;
     for(char c : board_config_str) {
         std::string c_str(1, c);
         if(c == '/') {
-            j++;
+            j--;
             i = 0;
             continue;
         } 
@@ -133,7 +133,7 @@ void BoardManager::make_move(const Move& move) {
 
     // pawn logic
     if(move.moved_piece == PieceType::PAWN) {
-        int forward = side == WHITE ? -BOARD_SIZE : BOARD_SIZE;
+        int forward = side == WHITE ? BOARD_SIZE : -BOARD_SIZE;
 
         // en-passant capture
         if(move.is_en_passant) {

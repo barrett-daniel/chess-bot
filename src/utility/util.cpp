@@ -12,39 +12,39 @@ Bitboard PAWN_ATTACKS_B[64] = {0};
 Bitboard KING_ATTACKS[64]   = {0};
 
 std::vector<std::pair<int, Bitboard>> ROOK_DIRECTIONS = {
-    {-8, EMPTY},    // N
-    { 8, EMPTY},    // S
+    { 8, EMPTY},    // N
+    {-8, EMPTY},    // S
     { 1, FILE_H},   // E
     {-1, FILE_A},   // W
 };
 
 std::vector<std::pair<int, Bitboard>> BISHOP_DIRECTIONS = {
-    {-7, FILE_H},  // NE
-    { 9, FILE_H},  // SE
-    { 7, FILE_A},  // SW
-    {-9, FILE_A},  // NW
+    { 9, FILE_H},  // NE
+    {-7, FILE_H},  // SE
+    {-9, FILE_A},  // SW
+    { 7, FILE_A},  // NW
 };
 
 std::vector<std::pair<int, Bitboard>> KING_DIRECTIONS = {
-    {-8, EMPTY},    // N
-    {-7,  FILE_H},  // NE
-    {1,  FILE_H},   // E
-    {9,  FILE_H},   // SE
-    {8,  EMPTY},    // S
-    {7,   FILE_A},  // SW
-    {-1, FILE_A},   // W
-    {-9, FILE_A},   // NW
+    {8,   EMPTY},   // N
+    {9,   FILE_H},  // NE
+    {1,   FILE_H},  // E
+    {-7,  FILE_H},  // SE
+    {-8,  EMPTY},   // S
+    {-9,  FILE_A},  // SW
+    {-1,  FILE_A},  // W
+    {7,   FILE_A},  // NW
 };
 
 std::vector<std::pair<int, Bitboard>> KNIGHT_DIRECTIONS = {
-    {-15, FILE_H},              // NNE
-    {-6,  FILE_G | FILE_H},     // NEE
-    {10,  FILE_G | FILE_H},     // SEE
-    {17,  FILE_H},              // SSE
-    {15,  FILE_A},              // SSW
-    {6,   FILE_A | FILE_B},     // SWW
-    {-10, FILE_A | FILE_B},     // NWW
-    {-17, FILE_A},              // NNW
+    {17,  FILE_H},              // NNE
+    {10,  FILE_G | FILE_H},     // NEE
+    {-6,  FILE_G | FILE_H},     // SEE
+    {-15, FILE_H},              // SSE
+    {-17, FILE_A},              // SSW
+    {-10, FILE_A | FILE_B},     // SWW
+    {6,   FILE_A | FILE_B},     // NWW
+    {15,  FILE_A},              // NNW
 };
 
 bool contains(const std::vector<Move>& moves, const Move& move) {
@@ -116,7 +116,7 @@ std::string to_string(const Bitboard& bb) {
 
 std::string to_string_sq(Square sq) {
     char file = 'a' + (sq % 8);
-    char rank = '0' + (8 - (sq / 8));
+    char rank = '1' + (sq / 8);
     return std::string(1, file) + std::string(1, rank);
 }
 

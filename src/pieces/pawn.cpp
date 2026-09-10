@@ -8,14 +8,14 @@ void append_promotions(tracked_array<Move, MAX_NUM_MOVES>& moves, const Move& ba
 void encode_pawn_move_data(Bitboard bb, int from_delta, tracked_array<Move, MAX_NUM_MOVES>& moves, long flags);
 
 inline Bitboard shift_fwd(bool is_white, Bitboard bb, uint8_t val) { 
-    if(is_white) return bb >> val;
+    if(is_white) return bb << val;
 
-    return bb << val;
+    return bb >> val;
 }
 
 inline void get_diag_shifts(bool is_white, uint8_t *l, uint8_t *r) {
-    *l = BOARD_SIZE + (is_white ? 1 : -1);
-    *r = BOARD_SIZE - (is_white ? 1 : -1);
+    *l = BOARD_SIZE - (is_white ? 1 : -1);
+    *r = BOARD_SIZE + (is_white ? 1 : -1);
 }
 
 void init_pawn_attacks(bool is_white) {
@@ -51,12 +51,12 @@ tracked_array<Move, MAX_NUM_MOVES> get_pawn_moves(
     get_diag_shifts(is_white, &diag_l_shift, &diag_r_shift);
     tracked_array<Move, MAX_NUM_MOVES> moves;
 
-    Bitboard prom_rank = is_white ? RANK_1 : RANK_8;
+    Bitboard prom_rank = is_white ? RANK_8 : RANK_1;
     Bitboard empty = ~all_bb;
 
     // construct bitboards for single and double pushes
     Bitboard singles = shift_fwd(is_white, from_bb, BOARD_SIZE) & empty;
-    Bitboard double_push_rank = is_white ? RANK_6 : RANK_3;
+    Bitboard double_push_rank = is_white ? RANK_3 : RANK_6;
     Bitboard doubles = shift_fwd(is_white, singles & double_push_rank, BOARD_SIZE) & empty;
 
     // construct bitboards for diagonal moves i.e. en-passant and captures
@@ -121,7 +121,7 @@ void encode_pawn_move_data(
 ) {
     while(bb) {
         Square to = pop_lsb(bb);
-        Square from = to + from_delta;
+        Square from = to - from_delta;
 
         Move move(from, to, PieceType::PAWN);
         move.is_en_passant = flags & PASSANT;
