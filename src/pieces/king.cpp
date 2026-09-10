@@ -3,8 +3,6 @@
 
 // TODO: castling
 
-void encode_king_move_data(Bitboard bb, int from_delta, tracked_array<Move, MAX_NUM_MOVES>& moves);
-
 void init_king_attacks() {
     for (Square sq = 0; sq < BOARD_SIZE * BOARD_SIZE; sq++) {
         Bitboard bb = 0ULL;
@@ -25,18 +23,22 @@ tracked_array<Move, MAX_NUM_MOVES> get_king_moves(
 ) {
     tracked_array<Move, MAX_NUM_MOVES> moves;
 
-    for(auto [dir, mask] : KING_DIRECTIONS) {
-        Bitboard bb = shift_dir(from_bb & ~mask, dir) & ~own_pieces;
-        encode_king_move_data(bb, -dir, moves);
+    while (from_bb) {
+        Square from = pop_lsb(from_bb);
+        Bitboard targets = KING_ATTACKS[from] & ~own_pieces;
+        while (targets) {
+            Square to = pop_lsb(targets);
+            moves.emplace_back(from, to, KING);
+        }
     }
 
     // castling
-    bool can_queen_castle = is_white 
-        ? castling_rights & W_QUEEN_CASTLE_MASK 
+    bool can_queen_castle = is_white
+        ? castling_rights & W_QUEEN_CASTLE_MASK
         : castling_rights & B_QUEEN_CASTLE_MASK;
 
-    bool can_king_castle = is_white 
-        ? castling_rights & W_KING_CASTLE_MASK 
+    bool can_king_castle = is_white
+        ? castling_rights & W_KING_CASTLE_MASK
         : castling_rights & B_KING_CASTLE_MASK;
 
     Square castle_from = is_white ? W_KING_START_POS : B_KING_START_POS;
@@ -60,16 +62,4 @@ tracked_array<Move, MAX_NUM_MOVES> get_king_moves(
     }
 
     return moves;
-}
-
-void encode_king_move_data(
-    Bitboard bb, 
-    int from_delta,
-    tracked_array<Move, MAX_NUM_MOVES>& moves
-) {
-    while(bb) {
-        Square to = pop_lsb(bb);
-        Square from = to + from_delta;
-        moves.emplace_back(from, to, PieceType::KING);
-    }
 }
