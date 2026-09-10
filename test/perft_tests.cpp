@@ -6,26 +6,6 @@
 
 // https://chessprogramming.org/Perft
 
-std::string sq_to_str(int sq) {
-    char file = 'a' + (sq % 8);
-    char rank = '0' + (8 - (sq / 8));
-    return std::string(1, file) + std::string(1, rank);
-}
-
-std::string move_to_str(const Move& m) {
-    std::string s = sq_to_str(m.from) + sq_to_str(m.to);
-    if (m.promotion_piece != NONE) {
-        switch (m.promotion_piece) {
-            case QUEEN:  s += 'q'; break;
-            case ROOK:   s += 'r'; break;
-            case BISHOP: s += 'b'; break;
-            case KNIGHT: s += 'n'; break;
-            default: break;
-        }
-    }
-    return s;
-}
-
 TEST_SUITE("PERFT Tests") {
     /**
      * Performs the PERFT tests from the given starting FEN position.
