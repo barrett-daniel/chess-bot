@@ -18,16 +18,19 @@ OTHER:
 
 MOVE OPTAMISATION:
 - rework history into undo_structs
-- precomputed move tables for bishops and rooks
-- change 'Sqaure' from 'int' to 'uint8_t'
-- reduce heap allocations i.e. use std::array not std::vector
 
 AI OPTAMISATION:
-- sorting moves
-- hash-set for openenings
-- overlay bbs for piece positions at various states for better positioning
-- opening move book
-- endgame move book/optimisation
+- Move ordering / sorting moves
+- Opening Book moves
+- Endgame move book/optimisation
+- Quiescence search
+- Iterative deepening
+- Transposition table
+- Piece-square tables
+- Null-move pruning
+- Incremental evaluation
+- Mobility
+- Checkmate scores i.e. (MATE_VALUE - depth_from_root) as opposed to INT_MAX
 
 https://chessprogramming.org/Encoding_Moves#fn2
 https://chessprogramming.org/Perft
