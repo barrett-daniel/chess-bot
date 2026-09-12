@@ -47,7 +47,7 @@ TEST_SUITE("Win At Chess") {
 
         if (file < 0 || file > 7 || rank < 1 || rank > 8) throw std::invalid_argument("Bad square string: " + s);
 
-        return (8 - rank) * 8 + file;
+        return (rank - 1) * 8 + file;
     }
 
     /**
@@ -93,7 +93,7 @@ TEST_SUITE("Win At Chess") {
 
             if (disambig_file != -1 || disambig_rank != -1) {
                 int from_file = m.from % 8;
-                int from_rank = 8 - (m.from / 8);
+                int from_rank = (m.from / 8) + 1;
                 if (disambig_file != -1 && from_file != disambig_file) continue;
                 if (disambig_rank != -1 && from_rank != disambig_rank) continue;
             }
