@@ -30,7 +30,6 @@ AI OPTAMISATION:
 - Null-move pruning
 - Incremental evaluation
 - Mobility
-- Checkmate scores i.e. (MATE_VALUE - depth_from_root) as opposed to INT_MAX
 
 https://chessprogramming.org/Encoding_Moves#fn2
 https://chessprogramming.org/Perft
