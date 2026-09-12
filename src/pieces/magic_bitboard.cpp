@@ -1,6 +1,9 @@
 #include "magic_bitboard.hpp"
 #include "utility/util.hpp"
 
+
+// max number of relevant occupancy bits for rook and bishop occupancy bitboards
+// are 4096 and 512 respectively, hence they are the size of the arrays
 std::array<Bitboard, 4096> ROOK_ATTACKS[64] = {};
 std::array<Bitboard, 512>  BISHOP_ATTACKS[64] = {};
 

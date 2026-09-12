@@ -10,6 +10,7 @@ tracked_array<Move, MAX_NUM_MOVES> get_moves(Colour side, BoardState& bs, int po
     LOG_TRACE;
     Bitboard enemy_pieces = bs.get_bb(!side, PieceType::NONE);
     Bitboard own_pieces   = bs.get_bb(side, PieceType::NONE);
+    Bitboard occupancy_bb = bs.all_pieces;
 
     Bitboard pawn_bb = bs.get_bb(side, PieceType::PAWN);
     if(is_bit(pawn_bb, pos)) {
@@ -44,7 +45,7 @@ tracked_array<Move, MAX_NUM_MOVES> get_moves(Colour side, BoardState& bs, int po
         return get_bishop_moves(
             from_bb,
             own_pieces,
-            enemy_pieces
+            occupancy_bb
         );
     }
 
@@ -56,7 +57,7 @@ tracked_array<Move, MAX_NUM_MOVES> get_moves(Colour side, BoardState& bs, int po
         return get_rook_moves(
             from_bb,
             own_pieces,
-            enemy_pieces
+            occupancy_bb
         );
     }
 
@@ -68,7 +69,7 @@ tracked_array<Move, MAX_NUM_MOVES> get_moves(Colour side, BoardState& bs, int po
         return get_queen_moves(
             from_bb,
             own_pieces,
-            enemy_pieces
+            occupancy_bb
         );
     }
 
@@ -114,6 +115,7 @@ tracked_array<Move, MAX_NUM_MOVES> get_moves(Colour side, BoardState& bs, PieceT
     LOG_TRACE;
     Bitboard own_pieces_bb = bs.get_bb(side, PieceType::NONE);
     Bitboard pieces_bb     = bs.get_bb(!side, PieceType::NONE);
+    Bitboard occupancy_bb  = bs.all_pieces;
 
     switch(type) {
         case PieceType::PAWN: {
@@ -138,7 +140,7 @@ tracked_array<Move, MAX_NUM_MOVES> get_moves(Colour side, BoardState& bs, PieceT
             return get_bishop_moves(
                 bishop_bb,
                 own_pieces_bb,
-                pieces_bb
+                occupancy_bb
             );
         }
         case PieceType::ROOK: {
@@ -146,7 +148,7 @@ tracked_array<Move, MAX_NUM_MOVES> get_moves(Colour side, BoardState& bs, PieceT
             return get_rook_moves(
                 rook_bb,
                 own_pieces_bb,
-                pieces_bb
+                occupancy_bb
             );
         }
         case PieceType::QUEEN: {
@@ -154,7 +156,7 @@ tracked_array<Move, MAX_NUM_MOVES> get_moves(Colour side, BoardState& bs, PieceT
             return get_queen_moves(
                 queen_bb,
                 own_pieces_bb,
-                pieces_bb
+                occupancy_bb
             );
         }
         case PieceType::KING: {

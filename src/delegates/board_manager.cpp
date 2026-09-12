@@ -431,6 +431,7 @@ bool BoardManager::valid_castle(Square move_from, Square rook_pos, Colour side, 
 
     const Bitboard enemy_occupancy     = bs.get_bb(!side, PieceType::NONE);
     const Bitboard own_occupancy       = bs.get_bb(side, PieceType::NONE);
+    const Bitboard occupancy           = bs.all_pieces;
 
     // Check each square for attacks
     for (Square sq : king_path) {
@@ -442,8 +443,8 @@ bool BoardManager::valid_castle(Square move_from, Square rook_pos, Colour side, 
         if ((side == Colour::WHITE ? PAWN_ATTACKS_B[sq] : PAWN_ATTACKS_W[sq]) & enemy_pawns) return false;
 
         // Sliding pieces
-        if ((get_bishop_attack_sqs(enemy_sliders_bishop, own_occupancy, enemy_occupancy) & sq_bb) != 0) return false;
-        if ((get_rook_attack_sqs(  enemy_sliders_rook,   own_occupancy, enemy_occupancy) & sq_bb) != 0) return false;
+        if ((get_bishop_attack_sqs(enemy_sliders_bishop, own_occupancy, occupancy) & sq_bb) != 0) return false;
+        if ((get_rook_attack_sqs(  enemy_sliders_rook,   own_occupancy, occupancy) & sq_bb) != 0) return false;
     }
 
     return true;
@@ -487,11 +488,12 @@ bool BoardManager::is_in_check(Colour side) {
     Bitboard own_pieces   = bs.get_bb(!side, PieceType::NONE);
     Bitboard enemy_pieces = bs.get_bb(side, PieceType::NONE);
     Bitboard king_bb      = bs.get_bb(side, PieceType::KING);
+    Bitboard occupancy    = bs.all_pieces;
 
     // queen attacks are bundled in with the below
-    Bitboard bishop_attacks = get_bishop_attack_sqs(bs.get_bb(!side, PieceType::BISHOP) | bs.get_bb(!side, PieceType::QUEEN), own_pieces, enemy_pieces);
+    Bitboard bishop_attacks = get_bishop_attack_sqs(bs.get_bb(!side, PieceType::BISHOP) | bs.get_bb(!side, PieceType::QUEEN), own_pieces, occupancy);
     if((bishop_attacks & king_bb) != 0) return true;
-    Bitboard rook_attacks     = get_rook_attack_sqs  (bs.get_bb(!side, PieceType::ROOK) | bs.get_bb(!side, PieceType::QUEEN), own_pieces, enemy_pieces);
+    Bitboard rook_attacks     = get_rook_attack_sqs  (bs.get_bb(!side, PieceType::ROOK) | bs.get_bb(!side, PieceType::QUEEN), own_pieces, occupancy);
     if((rook_attacks & king_bb) != 0) return true;
 
     // check for attack array
