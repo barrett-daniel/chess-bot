@@ -208,8 +208,18 @@ enum GameState {
     UNFINISHED
 };
 
-template <typename T, size_t N>
-using tracked_array = boost::container::static_vector<T, N>; // alias
+// we define a compile-time overload of tracked_array to be a vector in debug
+// and a boost::static vector in release mode.
+//
+// the static vector yields far better performance, but is somewhat of a black box
+// when using a debugger, hence the need to use a standard vector.
+#ifdef NDEBUG
+    template <typename T, size_t N>
+    using tracked_array = boost::container::static_vector<T, N>; // alias
+#else
+    template <typename T, size_t N>
+    using tracked_array = std::vector<T>;
+#endif
 
 std::string to_string_piece(PieceType piece);
 std::string to_string_sq(Square sq);
