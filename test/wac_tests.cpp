@@ -17,7 +17,7 @@
 TEST_SUITE("Win At Chess") {
     constexpr const char* DATABASE_FPATH = "../../test/resources/wac_database.txt";
     constexpr int NUM_CASES = 300;
-    constexpr int AI_TEST_DEPTH = 4;
+    constexpr int AI_TEST_DEPTH = 5;
 
     // ------------------------------------------------------------------------
     // Chess Notation Move Parsing
