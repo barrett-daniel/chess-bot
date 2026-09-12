@@ -8,6 +8,7 @@
 
 #define COUNT_BITS(expr) __builtin_popcountll(expr)
 
+constexpr int MATE_VALUE = INT_MAX - 1000; // not so close to INT_MAX to prevent overflow
 constexpr Bitboard CENTRE(0x1818000000);
 constexpr Bitboard EXTENDED_CENTRE(0x3c3c3c3c0000);
 constexpr Bitboard KING_SAFETY(0xe7000000000000e7);
@@ -41,16 +42,18 @@ Move AIManager::get_move(BoardManager& board_manager, int depth) {
     tracked_array<Move, MAX_NUM_MOVES> valid_moves = board_manager.get_legal_moves(moves);
 
     Move best = valid_moves[0];
-    int highest_score = INT_MIN;
+    int alpha = INT_MIN;
+    int beta = INT_MAX;
 
     for(Move move : valid_moves) {
         board_manager.make_move(move);
-        int score = min_max(board_manager, depth - 1, false, INT_MIN, INT_MAX);
-        if(score > highest_score) {
-            highest_score = score;
+        int score = min_max(board_manager, depth - 1, false, alpha, beta);
+        board_manager.undo_move();
+
+        if (score > alpha) {
+            alpha = score;
             best = move;
         }
-        board_manager.undo_move();
     }
     return best;
 }
@@ -66,7 +69,7 @@ int AIManager::min_max(BoardManager& board_manager, int depth, bool is_maximisin
     tracked_array<Move, MAX_NUM_MOVES> valid_moves = board_manager.get_legal_moves(moves, in_check);
 
     switch (BoardManager::get_game_state(valid_moves, in_check)) {
-        case CHECKMATE: return bs.turn == ai_colour ? INT_MIN : INT_MAX;
+        case CHECKMATE: return bs.turn == ai_colour ? -(MATE_VALUE + depth) : (MATE_VALUE + depth);
         case STALEMATE: return 0;
         default: break;
     }
@@ -100,37 +103,29 @@ int AIManager::eval_board(BoardState& bs) {
 
     // count pieces
     auto bbs = bs.piece_bbs();
-    for(int i = 0; i < NUM_PIECE_BBS; i++) {
-        Bitboard bb    = bbs[i];
+    for (int i = 0; i < NUM_PIECE_BBS; i++) {
+        Bitboard bb = bbs[i];
 
-        // calculate what type of board is being referenced and how the score
-        // should be multiplied so that BLACK decreases the score, WHITE
-        // increases the score.
         PieceType bb_type = static_cast<PieceType>(i % (NUM_PIECE_BBS / 2));
         int score_multiplier = i < NUM_PIECE_BBS / 2 ? 1 : -1;
 
-        // calculate the score per piece and increment the score counter for
-        // each piece
         int score_per_piece = PIECE_MAP[bb_type] * score_multiplier;
-        while(bb) {
+        while (bb) {
             pop_lsb(bb);
             score += score_per_piece;
         }
     }
 
-    Colour side = bs.turn;
+    // pawns
+    Bitboard& white_pawns = bs.get_bb(Colour::WHITE, PieceType::PAWN);
+    Bitboard& black_pawns = bs.get_bb(Colour::BLACK, PieceType::PAWN);
+    score += (COUNT_BITS(white_pawns & CENTRE) - COUNT_BITS(black_pawns & CENTRE)) * CENTRE_PAWN_VAL;
+    score += (COUNT_BITS(white_pawns & EXTENDED_CENTRE) - COUNT_BITS(black_pawns & EXTENDED_CENTRE)) * EXTENDED_CENTRE_PAWN_VAL;
 
-    // count centre pawns
-    Bitboard& own_pawns   = bs.get_bb(side,  PieceType::PAWN);
-    Bitboard& enemy_pawns = bs.get_bb(!side, PieceType::PAWN);
-    score += (COUNT_BITS(own_pawns & CENTRE) - COUNT_BITS(enemy_pawns & CENTRE)) * CENTRE_PAWN_VAL;
-    score += (COUNT_BITS(own_pawns & EXTENDED_CENTRE) - COUNT_BITS(enemy_pawns & EXTENDED_CENTRE)) * EXTENDED_CENTRE_PAWN_VAL;
+    // king safety
+    Bitboard& white_king = bs.get_bb(Colour::WHITE, PieceType::KING);
+    Bitboard& black_king = bs.get_bb(Colour::BLACK, PieceType::KING);
+    score += (COUNT_BITS(white_king & KING_SAFETY) - COUNT_BITS(black_king & KING_SAFETY)) * KING_SAFETY_VAL;
 
-    // check king safety
-    Bitboard& own_king   = bs.get_bb(side,  PieceType::KING);
-    Bitboard& enemy_king = bs.get_bb(!side, PieceType::KING);
-    score += (COUNT_BITS(own_king & KING_SAFETY) - COUNT_BITS(enemy_king & KING_SAFETY) * KING_SAFETY_VAL);
-
-
-    return ai_colour == Colour::WHITE ? score : -score;;
+    return ai_colour == Colour::WHITE ? score : -score; // flip so score is from AI's perspective
 }
