@@ -104,16 +104,13 @@ int AIManager::eval_board(BoardState& bs) {
     // count pieces
     auto bbs = bs.piece_bbs();
     for (int i = 0; i < NUM_PIECE_BBS; i++) {
-        Bitboard bb = bbs[i];
+        Bitboard& bb = bbs[i];
 
         PieceType bb_type = static_cast<PieceType>(i % (NUM_PIECE_BBS / 2));
         int score_multiplier = i < NUM_PIECE_BBS / 2 ? 1 : -1;
 
         int score_per_piece = PIECE_MAP[bb_type] * score_multiplier;
-        while (bb) {
-            pop_lsb(bb);
-            score += score_per_piece;
-        }
+        score += std::popcount(bb) * score_per_piece;
     }
 
     // pawns
