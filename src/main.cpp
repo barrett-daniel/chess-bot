@@ -79,7 +79,7 @@ int main(int argc, char* argv[]) {
         GameState state = board_manager.get_game_state();
         if (is_game_over(state)) {
             LOGGER_ON;
-            LOG("Game Over! State: " + state);
+            LOG("Game Over! State: " + std::to_string(static_cast<uint8_t>(state)));
             input_manager.quit();
             break;
         }

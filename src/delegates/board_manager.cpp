@@ -43,22 +43,22 @@ BoardManager::BoardManager(const std::string fen) {
 
         int bit = i + (j * BOARD_SIZE);
         set_bit(bs.all_pieces, bit);
-        if(isupper(c)) set_bit(bs.w_pieces, bit);
-        else           set_bit(bs.b_pieces, bit);
+        if(isupper(c)) set_bit(bs.get_bb(Colour::WHITE, PieceType::NONE), bit);
+        else           set_bit(bs.get_bb(Colour::BLACK, PieceType::NONE), bit);
 
         switch(c) {
-            case 'p': set_bit(bs.b_pawns,   bit); break;
-            case 'P': set_bit(bs.w_pawns,   bit); break;
-            case 'n': set_bit(bs.b_knights, bit); break;
-            case 'N': set_bit(bs.w_knights, bit); break;
-            case 'b': set_bit(bs.b_bishops, bit); break;
-            case 'B': set_bit(bs.w_bishops, bit); break;
-            case 'r': set_bit(bs.b_rooks,   bit); break;
-            case 'R': set_bit(bs.w_rooks,   bit); break;
-            case 'q': set_bit(bs.b_queens,  bit); break;
-            case 'Q': set_bit(bs.w_queens,  bit); break;
-            case 'k': set_bit(bs.b_king,    bit); break;
-            case 'K': set_bit(bs.w_king,    bit); break;
+            case 'p': set_bit(bs.get_bb(Colour::BLACK, PieceType::PAWN),   bit); break;
+            case 'P': set_bit(bs.get_bb(Colour::WHITE, PieceType::PAWN),   bit); break;
+            case 'n': set_bit(bs.get_bb(Colour::BLACK, PieceType::KNIGHT), bit); break;
+            case 'N': set_bit(bs.get_bb(Colour::WHITE, PieceType::KNIGHT), bit); break;
+            case 'b': set_bit(bs.get_bb(Colour::BLACK, PieceType::BISHOP), bit); break;
+            case 'B': set_bit(bs.get_bb(Colour::WHITE, PieceType::BISHOP), bit); break;
+            case 'r': set_bit(bs.get_bb(Colour::BLACK, PieceType::ROOK),   bit); break;
+            case 'R': set_bit(bs.get_bb(Colour::WHITE, PieceType::ROOK),   bit); break;
+            case 'q': set_bit(bs.get_bb(Colour::BLACK, PieceType::QUEEN),  bit); break;
+            case 'Q': set_bit(bs.get_bb(Colour::WHITE, PieceType::QUEEN),  bit); break;
+            case 'k': set_bit(bs.get_bb(Colour::BLACK, PieceType::KING),    bit); break;
+            case 'K': set_bit(bs.get_bb(Colour::WHITE, PieceType::KING),    bit); break;
             default: break;
         }
 
@@ -124,7 +124,7 @@ void BoardManager::make_move(const Move& move) {
     }
 
     // reset all bitboards
-    for(Bitboard& bb : bs.piece_bbs()) clear_bit(bb, move.to);
+    for(Bitboard& bb : bs.bbs) clear_bit(bb, move.to);
 
     // update moved piece bb
     Bitboard& bb = bs.get_bb(side, move.moved_piece);
@@ -196,11 +196,24 @@ void inline BoardManager::update_castling_rights(Square move_pos) {
 }
 
 void inline BoardManager::update_poly_bbs() {
-    bs.w_pieces   = bs.w_pawns | bs.w_knights | bs.w_bishops | 
-                    bs.w_rooks | bs.w_queens | bs.w_king;
-    bs.b_pieces   = bs.b_pawns | bs.b_knights | bs.b_bishops | 
-                    bs.b_rooks | bs.b_queens | bs.b_king;
-    bs.all_pieces = bs.w_pieces | bs.b_pieces;
+    Bitboard& white_pieces = bs.get_bb(Colour::WHITE, PieceType::NONE);
+    white_pieces = bs.get_bb(Colour::WHITE, PieceType::PAWN) |
+        bs.get_bb(Colour::WHITE, PieceType::PAWN) |
+        bs.get_bb(Colour::WHITE, PieceType::KNIGHT) |
+        bs.get_bb(Colour::WHITE, PieceType::BISHOP) |
+        bs.get_bb(Colour::WHITE, PieceType::ROOK) |
+        bs.get_bb(Colour::WHITE, PieceType::QUEEN) |
+        bs.get_bb(Colour::WHITE, PieceType::KING);
+
+    Bitboard& black_pieces = bs.get_bb(Colour::BLACK, PieceType::NONE);
+    black_pieces = bs.get_bb(Colour::BLACK, PieceType::PAWN) |
+        bs.get_bb(Colour::BLACK, PieceType::KNIGHT) |
+        bs.get_bb(Colour::BLACK, PieceType::BISHOP) |
+        bs.get_bb(Colour::BLACK, PieceType::ROOK) |
+        bs.get_bb(Colour::BLACK, PieceType::QUEEN) |
+        bs.get_bb(Colour::BLACK, PieceType::KING);
+
+    bs.all_pieces = white_pieces | black_pieces;
 }
 
 void BoardManager::process_q_castle(Colour side) {
@@ -486,7 +499,6 @@ bool BoardManager::is_in_check(Colour side) {
     // check for sliding piece checks
     // could be optamised with magic bitboards
     Bitboard own_pieces   = bs.get_bb(!side, PieceType::NONE);
-    Bitboard enemy_pieces = bs.get_bb(side, PieceType::NONE);
     Bitboard king_bb      = bs.get_bb(side, PieceType::KING);
     Bitboard occupancy    = bs.all_pieces;
 
@@ -500,7 +512,10 @@ bool BoardManager::is_in_check(Colour side) {
     Square king_sq = pop_lsb(king_bb);
     if (KNIGHT_ATTACKS[king_sq] & bs.get_bb(!side, PieceType::KNIGHT)) return true;
     if (KING_ATTACKS[king_sq]   & bs.get_bb(!side, PieceType::KING))   return true;
-    if (side == Colour::WHITE ? PAWN_ATTACKS_B[king_sq] & bs.b_pawns : PAWN_ATTACKS_W[king_sq] & bs.w_pawns) return true;
+    if (side == Colour::WHITE
+        ? PAWN_ATTACKS_B[king_sq] & bs.get_bb(Colour::BLACK, PieceType::PAWN)
+        : PAWN_ATTACKS_W[king_sq] & bs.get_bb(Colour::WHITE, PieceType::PAWN)
+    ) return true;
     
     return false;
 }

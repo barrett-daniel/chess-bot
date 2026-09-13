@@ -268,12 +268,14 @@ class Move {
 constexpr int NUM_PIECE_BBS = 12;
 class BoardState {
     public:
-        Bitboard w_pawns, w_knights, w_bishops, w_rooks, w_queens, w_king;
-        Bitboard b_pawns, b_knights, b_bishops, b_rooks, b_queens, b_king;
-        
-        Bitboard w_pieces;
-        Bitboard b_pieces;
-        Bitboard all_pieces;   
+        // Piece bitboards are stored as an array of the form:
+        // [white pawn, white knight, ... all white pieces,
+        //  black pawn, black knight, ... all black pieces]
+        // Based on the casted index of the PieceType and Colour enums
+        // get_bb allows a clean interface to index into array and fetch
+        // the associated bitboard based on the desired PieceType and Colour
+        std::array<Bitboard, 14> bbs;
+        Bitboard all_pieces;
 
         Colour turn;
         uint8_t castling_rights;
@@ -283,47 +285,14 @@ class BoardState {
         uint16_t full_move_count;
         uint8_t half_move_count; // half move logic for 50-move draw rule is not yet implemented
 
-        BoardState()
-            : w_pawns(0), w_knights(0), w_bishops(0), w_rooks(0), w_queens(0), w_king(0),
-            b_pawns(0), b_knights(0), b_bishops(0), b_rooks(0), b_queens(0), b_king(0),
-            w_pieces(0), b_pieces(0), all_pieces(0), en_passant_square(NULL_SQ)
-        {}
+        BoardState() : bbs({}), all_pieces(0), turn(Colour::WHITE), castling_rights(0), en_passant_square(NULL_SQ), full_move_count(0), half_move_count(0) {}
 
-        Bitboard& get_bb(Colour side, PieceType type) {
-            switch (side) {
-                case Colour::WHITE:
-                    switch (type) {
-                        case PieceType::PAWN:   return w_pawns;
-                        case PieceType::KNIGHT: return w_knights;
-                        case PieceType::BISHOP: return w_bishops;
-                        case PieceType::ROOK:   return w_rooks;
-                        case PieceType::QUEEN:  return w_queens;
-                        case PieceType::KING:   return w_king;
-                        case PieceType::NONE:   return w_pieces;
-                    }
-                    break;
-                case Colour::BLACK:
-                    switch (type) {
-                        case PieceType::PAWN:   return b_pawns;
-                        case PieceType::KNIGHT: return b_knights;
-                        case PieceType::BISHOP: return b_bishops;
-                        case PieceType::ROOK:   return b_rooks;
-                        case PieceType::QUEEN:  return b_queens;
-                        case PieceType::KING:   return b_king;
-                        case PieceType::NONE:   return b_pieces;
-                    }
-                    break;
-            }
-            throw std::invalid_argument("Invalid colour or piece type");
+        inline Bitboard& get_bb(Colour side, PieceType type) {
+            return bbs[static_cast<uint8_t>(side) * 7 + static_cast<uint8_t>(type)];
         }
 
-        std::array<std::reference_wrapper<Bitboard>, NUM_PIECE_BBS> piece_bbs() {
-            return {
-                std::ref(w_pawns), std::ref(w_knights), std::ref(w_bishops),
-                std::ref(w_rooks), std::ref(w_queens), std::ref(w_king),
-                std::ref(b_pawns), std::ref(b_knights), std::ref(b_bishops),
-                std::ref(b_rooks), std::ref(b_queens), std::ref(b_king)
-            };
+        inline Bitboard get_bb(Colour side, PieceType type) const {
+            return bbs[static_cast<uint8_t>(side) * 7 + static_cast<uint8_t>(type)];
         }
 };
 

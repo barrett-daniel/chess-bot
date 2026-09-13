@@ -131,20 +131,20 @@ std::vector<BitboardMeta> Renderer::get_boards_data(const BoardState& bs) const 
     std::vector<BitboardMeta> data;
 
     // White pieces
-    data.push_back({ bs.w_pawns,   PieceType::PAWN,   Colour::WHITE });
-    data.push_back({ bs.w_knights, PieceType::KNIGHT, Colour::WHITE });
-    data.push_back({ bs.w_bishops, PieceType::BISHOP, Colour::WHITE });
-    data.push_back({ bs.w_rooks,   PieceType::ROOK,   Colour::WHITE });
-    data.push_back({ bs.w_queens,  PieceType::QUEEN,  Colour::WHITE });
-    data.push_back({ bs.w_king,    PieceType::KING,   Colour::WHITE });
+    data.push_back({ bs.get_bb(Colour::WHITE, PieceType::PAWN),   PieceType::PAWN,   Colour::WHITE });
+    data.push_back({ bs.get_bb(Colour::WHITE, PieceType::KNIGHT), PieceType::KNIGHT, Colour::WHITE });
+    data.push_back({ bs.get_bb(Colour::WHITE, PieceType::BISHOP), PieceType::BISHOP, Colour::WHITE });
+    data.push_back({ bs.get_bb(Colour::WHITE, PieceType::ROOK),   PieceType::ROOK,   Colour::WHITE });
+    data.push_back({ bs.get_bb(Colour::WHITE, PieceType::QUEEN),  PieceType::QUEEN,  Colour::WHITE });
+    data.push_back({ bs.get_bb(Colour::WHITE, PieceType::KING),    PieceType::KING,   Colour::WHITE });
 
     // Black pieces
-    data.push_back({ bs.b_pawns,   PieceType::PAWN,   Colour::BLACK });
-    data.push_back({ bs.b_knights, PieceType::KNIGHT, Colour::BLACK });
-    data.push_back({ bs.b_bishops, PieceType::BISHOP, Colour::BLACK });
-    data.push_back({ bs.b_rooks,   PieceType::ROOK,   Colour::BLACK });
-    data.push_back({ bs.b_queens,  PieceType::QUEEN,  Colour::BLACK });
-    data.push_back({ bs.b_king,    PieceType::KING,   Colour::BLACK });
+    data.push_back({ bs.get_bb(Colour::BLACK, PieceType::PAWN),   PieceType::PAWN,   Colour::BLACK });
+    data.push_back({ bs.get_bb(Colour::BLACK, PieceType::KNIGHT), PieceType::KNIGHT, Colour::BLACK });
+    data.push_back({ bs.get_bb(Colour::BLACK, PieceType::BISHOP), PieceType::BISHOP, Colour::BLACK });
+    data.push_back({ bs.get_bb(Colour::BLACK, PieceType::ROOK),   PieceType::ROOK,   Colour::BLACK });
+    data.push_back({ bs.get_bb(Colour::BLACK, PieceType::QUEEN),  PieceType::QUEEN,  Colour::BLACK });
+    data.push_back({ bs.get_bb(Colour::BLACK, PieceType::KING),    PieceType::KING,   Colour::BLACK });
 
     return data;
 }

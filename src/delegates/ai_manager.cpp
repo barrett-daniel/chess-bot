@@ -15,13 +15,11 @@ constexpr int CENTRE_PAWN_VAL = 25;
 constexpr int EXTENDED_CENTRE_PAWN_VAL = 15;
 constexpr int KING_SAFETY_VAL = 30;
 
-std::unordered_map<PieceType, int> PIECE_MAP = {
-    {PieceType::PAWN, 100},
-    {PieceType::KNIGHT, 300},
-    {PieceType::BISHOP, 320},
-    {PieceType::ROOK, 500},
-    {PieceType::QUEEN, 900}
-};
+constexpr uint16_t PAWN_VALUE = 100;
+constexpr uint16_t KNIGHT_VALUE = 300;
+constexpr uint16_t BISHOP_VALUE = 320;
+constexpr uint16_t ROOK_VALUE = 500;
+constexpr uint16_t QUEEN_VALUE = 900;
 
 AIManager::AIManager(Colour ai_colour)
   : ai_colour(ai_colour),
@@ -99,21 +97,32 @@ int AIManager::min_max(BoardManager& board_manager, int depth, bool is_maximisin
 int AIManager::eval_board(BoardState& bs) {
     int score = 0;
 
-    // count pieces
-    auto bbs = bs.piece_bbs();
-    for (int i = 0; i < NUM_PIECE_BBS; i++) {
-        Bitboard& bb = bbs[i];
-
-        PieceType bb_type = static_cast<PieceType>(i % (NUM_PIECE_BBS / 2));
-        int score_multiplier = i < NUM_PIECE_BBS / 2 ? 1 : -1;
-
-        int score_per_piece = PIECE_MAP[bb_type] * score_multiplier;
-        score += std::popcount(bb) * score_per_piece;
-    }
-
-    // pawns
     Bitboard& white_pawns = bs.get_bb(Colour::WHITE, PieceType::PAWN);
     Bitboard& black_pawns = bs.get_bb(Colour::BLACK, PieceType::PAWN);
+
+    // count pieces
+    // pawns
+    score += std::popcount(white_pawns) * PAWN_VALUE;
+    score += std::popcount(black_pawns) * -PAWN_VALUE;
+
+    // knights
+    score += std::popcount(bs.get_bb(Colour::WHITE, PieceType::KNIGHT)) * KNIGHT_VALUE;
+    score += std::popcount(bs.get_bb(Colour::BLACK, PieceType::KNIGHT)) * -KNIGHT_VALUE;
+
+    // bishops
+    score += std::popcount(bs.get_bb(Colour::WHITE, PieceType::BISHOP)) * BISHOP_VALUE;
+    score += std::popcount(bs.get_bb(Colour::BLACK, PieceType::BISHOP)) * -BISHOP_VALUE;
+
+    // rooks
+    score += std::popcount(bs.get_bb(Colour::WHITE, PieceType::ROOK)) * BISHOP_VALUE;
+    score += std::popcount(bs.get_bb(Colour::BLACK, PieceType::ROOK)) * -BISHOP_VALUE;
+
+    // queens
+    score += std::popcount(bs.get_bb(Colour::WHITE, PieceType::QUEEN)) * BISHOP_VALUE;
+    score += std::popcount(bs.get_bb(Colour::BLACK, PieceType::QUEEN)) * -BISHOP_VALUE;
+
+    // Positional pieces
+    // pawns
     score += (std::popcount(white_pawns & CENTRE) - std::popcount(black_pawns & CENTRE)) * CENTRE_PAWN_VAL;
     score += (std::popcount(white_pawns & EXTENDED_CENTRE) - std::popcount(black_pawns & EXTENDED_CENTRE)) * EXTENDED_CENTRE_PAWN_VAL;
 
