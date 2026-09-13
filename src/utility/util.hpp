@@ -198,7 +198,7 @@ enum class PieceType : uint8_t {
 enum class GameState : uint8_t {
     CHECK,
     CHECKMATE,
-    STALEMATE,
+    DRAW,
     UNFINISHED
 };
 

@@ -64,9 +64,9 @@ int AIManager::min_max(BoardManager& board_manager, int depth, bool is_maximisin
     tracked_array<Move, MAX_NUM_MOVES> moves = get_moves(bs.turn, bs);
     tracked_array<Move, MAX_NUM_MOVES> valid_moves = board_manager.get_legal_moves(moves, in_check);
 
-    switch (BoardManager::get_game_state(valid_moves, in_check)) {
+    switch (board_manager.get_game_state(valid_moves, in_check)) {
         case GameState::CHECKMATE: return bs.turn == ai_colour ? -(MATE_VALUE + depth) : (MATE_VALUE + depth);
-        case GameState::STALEMATE: return 0;
+        case GameState::DRAW: return 0;
         default: break;
     }
 

@@ -15,7 +15,7 @@ class BoardManager {
         tracked_array<Move, MAX_NUM_MOVES> get_legal_moves(const tracked_array<Move, MAX_NUM_MOVES>& moves, bool in_check);
         tracked_array<Move, MAX_NUM_MOVES> get_legal_moves(const tracked_array<Move, MAX_NUM_MOVES>& moves);
 
-        static GameState get_game_state(const tracked_array<Move, MAX_NUM_MOVES>& legal_moves, bool in_check);
+        GameState get_game_state(const tracked_array<Move, MAX_NUM_MOVES>& legal_moves, bool in_check);
         GameState get_game_state();
         bool is_in_check(Colour side);
 

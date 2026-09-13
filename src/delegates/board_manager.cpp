@@ -119,12 +119,19 @@ void BoardManager::make_move(const Move& move) {
     history.push(bs);
     bs.en_passant_square = NULL_SQ;
 
+    bs.half_move_count++;
     if (side == Colour::BLACK) {
         ++bs.full_move_count;
     }
 
     // reset all bitboards
-    for(Bitboard& bb : bs.bbs) clear_bit(bb, move.to);
+    for(Bitboard& bb : bs.bbs) {
+        if (is_bit(bb, move.to)) {
+            bs.half_move_count = 0;
+            clear_bit(bb, move.to);
+            break;
+        }
+    }
 
     // update moved piece bb
     Bitboard& bb = bs.get_bb(side, move.moved_piece);
@@ -133,6 +140,7 @@ void BoardManager::make_move(const Move& move) {
 
     // pawn logic
     if(move.moved_piece == PieceType::PAWN) {
+        bs.half_move_count = 0;
         int forward = side == Colour::WHITE ? BOARD_SIZE : -BOARD_SIZE;
 
         // en-passant capture
@@ -179,9 +187,16 @@ void inline BoardManager::update_castling_rights(Square move_pos) {
         if(move_pos == W_KING_START_POS) [[unlikely]] {
             bs.castling_rights &= ~W_QUEEN_CASTLE_MASK;
             bs.castling_rights &= ~W_KING_CASTLE_MASK;
+            bs.half_move_count = 0;
         }
-        if(move_pos == W_QUEEN_ROOK_START_POS) [[unlikely]] bs.castling_rights &= ~W_QUEEN_CASTLE_MASK;
-        if(move_pos == W_KING_ROOK_START_POS)  [[unlikely]] bs.castling_rights &= ~W_KING_CASTLE_MASK;
+        if(move_pos == W_QUEEN_ROOK_START_POS) [[unlikely]] {
+            bs.castling_rights &= ~W_QUEEN_CASTLE_MASK;
+            bs.half_move_count = 0;
+        }
+        if(move_pos == W_KING_ROOK_START_POS)  [[unlikely]] {
+            bs.castling_rights &= ~W_KING_CASTLE_MASK;
+            bs.half_move_count = 0;
+        }
     }
 
     // update black castling rights
@@ -189,9 +204,16 @@ void inline BoardManager::update_castling_rights(Square move_pos) {
         if(move_pos == B_KING_START_POS) [[unlikely]] {
             bs.castling_rights &= ~B_QUEEN_CASTLE_MASK;
             bs.castling_rights &= ~B_KING_CASTLE_MASK;
+            bs.half_move_count = 0;
         }
-        if(move_pos == B_QUEEN_ROOK_START_POS) [[unlikely]] bs.castling_rights &= ~B_QUEEN_CASTLE_MASK;
-        if(move_pos == B_KING_ROOK_START_POS)  [[unlikely]] bs.castling_rights &= ~B_KING_CASTLE_MASK;
+        if(move_pos == B_QUEEN_ROOK_START_POS) [[unlikely]] {
+            bs.castling_rights &= ~B_QUEEN_CASTLE_MASK;
+            bs.half_move_count = 0;
+        }
+        if(move_pos == B_KING_ROOK_START_POS) [[unlikely]] {
+            bs.castling_rights &= ~B_KING_CASTLE_MASK;
+            bs.half_move_count = 0;
+        }
     }
 }
 
@@ -426,7 +448,7 @@ bool BoardManager::valid_castle(Square move_from, Square rook_pos, Colour side, 
 
     Square king_from = move_from;
     Square king_to   = king_castle ? move_from + 2 : move_from - 2;
-    std::vector<Square> king_path;
+    std::array<Square, 3> king_path;
 
     king_castle
         ? king_path = {king_from, static_cast<Square>(king_from + 1), king_to}
@@ -482,7 +504,9 @@ Bitboard BoardManager::get_delta_bb(Square a, Square b) {
 // ----------------------------------------------
 
 GameState BoardManager::get_game_state(const tracked_array<Move, MAX_NUM_MOVES>& legal_moves, bool in_check) {
-    if (legal_moves.empty()) return in_check ? GameState::CHECKMATE : GameState::STALEMATE;
+    if (bs.half_move_count >= 100) return GameState::DRAW; // 50 move rule
+
+    if (legal_moves.empty()) return in_check ? GameState::CHECKMATE : GameState::DRAW; // checkmate or stalemate
     if (in_check) return GameState::CHECK;
 
     return GameState::UNFINISHED;
