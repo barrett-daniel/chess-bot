@@ -6,8 +6,6 @@
 #include <ctime>
 #include <unordered_map>
 
-#define COUNT_BITS(expr) __builtin_popcountll(expr)
-
 constexpr int MATE_VALUE = INT_MAX - 1000; // not so close to INT_MAX to prevent overflow
 constexpr Bitboard CENTRE(0x1818000000);
 constexpr Bitboard EXTENDED_CENTRE(0x3c3c3c3c0000);
@@ -69,8 +67,8 @@ int AIManager::min_max(BoardManager& board_manager, int depth, bool is_maximisin
     tracked_array<Move, MAX_NUM_MOVES> valid_moves = board_manager.get_legal_moves(moves, in_check);
 
     switch (BoardManager::get_game_state(valid_moves, in_check)) {
-        case CHECKMATE: return bs.turn == ai_colour ? -(MATE_VALUE + depth) : (MATE_VALUE + depth);
-        case STALEMATE: return 0;
+        case GameState::CHECKMATE: return bs.turn == ai_colour ? -(MATE_VALUE + depth) : (MATE_VALUE + depth);
+        case GameState::STALEMATE: return 0;
         default: break;
     }
 
@@ -116,13 +114,13 @@ int AIManager::eval_board(BoardState& bs) {
     // pawns
     Bitboard& white_pawns = bs.get_bb(Colour::WHITE, PieceType::PAWN);
     Bitboard& black_pawns = bs.get_bb(Colour::BLACK, PieceType::PAWN);
-    score += (COUNT_BITS(white_pawns & CENTRE) - COUNT_BITS(black_pawns & CENTRE)) * CENTRE_PAWN_VAL;
-    score += (COUNT_BITS(white_pawns & EXTENDED_CENTRE) - COUNT_BITS(black_pawns & EXTENDED_CENTRE)) * EXTENDED_CENTRE_PAWN_VAL;
+    score += (std::popcount(white_pawns & CENTRE) - std::popcount(black_pawns & CENTRE)) * CENTRE_PAWN_VAL;
+    score += (std::popcount(white_pawns & EXTENDED_CENTRE) - std::popcount(black_pawns & EXTENDED_CENTRE)) * EXTENDED_CENTRE_PAWN_VAL;
 
     // king safety
     Bitboard& white_king = bs.get_bb(Colour::WHITE, PieceType::KING);
     Bitboard& black_king = bs.get_bb(Colour::BLACK, PieceType::KING);
-    score += (COUNT_BITS(white_king & KING_SAFETY) - COUNT_BITS(black_king & KING_SAFETY)) * KING_SAFETY_VAL;
+    score += (std::popcount(white_king & KING_SAFETY) - std::popcount(black_king & KING_SAFETY)) * KING_SAFETY_VAL;
 
     return ai_colour == Colour::WHITE ? score : -score; // flip so score is from AI's perspective
 }

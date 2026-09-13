@@ -183,25 +183,19 @@ extern std::vector<std::pair<int, Bitboard>> KNIGHT_DIRECTIONS;
 constexpr uint8_t MAX_NUM_MOVES = 218; // source: https://lichess.org/@/Tobs40/blog/why-a-reachable-position-can-have-at-most-218-playable-moves/a5xdxeqs
 
 // Data types
-enum Colour {
+enum class Colour : uint8_t {
     WHITE, BLACK
 };
 
 inline Colour operator!(Colour c) {
-    return c == WHITE ? BLACK : WHITE;
+    return c == Colour::WHITE ? Colour::BLACK : Colour::WHITE;
 }
 
-enum AiType {
-    RANDOM,
-    FIRST,
-    SMART
-};
-
-enum PieceType {
+enum class PieceType : uint8_t {
     PAWN, KNIGHT, BISHOP, ROOK, QUEEN, KING, NONE
 };
 
-enum GameState {
+enum class GameState : uint8_t {
     CHECK,
     CHECKMATE,
     STALEMATE,
@@ -239,8 +233,8 @@ class Move {
         Move()
         : from(NULL_SQ),
             to(NULL_SQ),
-            moved_piece(NONE),
-            promotion_piece(NONE),
+            moved_piece(PieceType::NONE),
+            promotion_piece(PieceType::NONE),
             is_en_passant(false),
             q_castle(false),
             k_castle(false)
@@ -250,7 +244,7 @@ class Move {
         : from(from), 
             to(to),
             moved_piece(moved_piece), 
-            promotion_piece(NONE),
+            promotion_piece(PieceType::NONE),
             is_en_passant(false), 
             q_castle(false),
             k_castle(false)
@@ -258,12 +252,12 @@ class Move {
 
         std::string to_string() const {
             std::string s = to_string_sq(from) + to_string_sq(to);
-            if (promotion_piece != NONE) {
+            if (promotion_piece != PieceType::NONE) {
                 switch (promotion_piece) {
-                    case QUEEN:  s += 'q'; break;
-                    case ROOK:   s += 'r'; break;
-                    case BISHOP: s += 'b'; break;
-                    case KNIGHT: s += 'n'; break;
+                    case PieceType::QUEEN:  s += 'q'; break;
+                    case PieceType::ROOK:   s += 'r'; break;
+                    case PieceType::BISHOP: s += 'b'; break;
+                    case PieceType::KNIGHT: s += 'n'; break;
                     default: break;
                 }
             }

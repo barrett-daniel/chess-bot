@@ -106,22 +106,22 @@ void Renderer::render_board(const BoardState& bs) const {
 SDL_Texture* Renderer::get_tex_for_piece(PieceType type, Colour side) const {
     if(side == Colour::WHITE) {
         switch(type) {
-            case PAWN:   return w_pawn_tex;
-            case KNIGHT: return w_knight_tex;
-            case BISHOP: return w_bishop_tex;
-            case ROOK:   return w_rook_tex;
-            case QUEEN:  return w_queen_tex;
-            case KING:   return w_king_tex;
+            case PieceType::PAWN:   return w_pawn_tex;
+            case PieceType::KNIGHT: return w_knight_tex;
+            case PieceType::BISHOP: return w_bishop_tex;
+            case PieceType::ROOK:   return w_rook_tex;
+            case PieceType::QUEEN:  return w_queen_tex;
+            case PieceType::KING:   return w_king_tex;
             default:       return nullptr;
         }
     } else {
         switch(type) {
-            case PAWN:   return b_pawn_tex;
-            case KNIGHT: return b_knight_tex;
-            case BISHOP: return b_bishop_tex;
-            case ROOK:   return b_rook_tex;
-            case QUEEN:  return b_queen_tex;
-            case KING:   return b_king_tex;
+            case PieceType::PAWN:   return b_pawn_tex;
+            case PieceType::KNIGHT: return b_knight_tex;
+            case PieceType::BISHOP: return b_bishop_tex;
+            case PieceType::ROOK:   return b_rook_tex;
+            case PieceType::QUEEN:  return b_queen_tex;
+            case PieceType::KING:   return b_king_tex;
             default:       return nullptr;
         }
     }

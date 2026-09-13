@@ -103,7 +103,7 @@ tracked_array<Move, MAX_NUM_MOVES> get_pawn_moves(
 
 // appends all promotion variants of a given base move to a list of moves
 void append_promotions(tracked_array<Move, MAX_NUM_MOVES>& moves, const Move& base) {
-    for (PieceType type : {QUEEN, ROOK, BISHOP, KNIGHT}) {
+    for (PieceType type : {PieceType::QUEEN, PieceType::ROOK, PieceType::BISHOP, PieceType::KNIGHT}) {
         Move promoted = base;
         promoted.promotion_piece = type;
         moves.push_back(promoted);

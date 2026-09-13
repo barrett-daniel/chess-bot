@@ -35,12 +35,12 @@ TEST_SUITE("Speed Tests") {
         // run the test `n` times
         for (int i = 0; i < NUM_RUNS; i++) {
             BoardManager bm = BoardManager(fen);
-            AIManager black_ai = AIManager(BLACK);
-            AIManager white_ai = AIManager(WHITE);
+            AIManager black_ai = AIManager(Colour::BLACK);
+            AIManager white_ai = AIManager(Colour::WHITE);
 
             Colour turn = bm.get_bs().turn;
-            AIManager* player_one = turn == WHITE ? &white_ai : &black_ai;
-            AIManager* player_two = turn == WHITE ? &black_ai : &white_ai;
+            AIManager* player_one = turn == Colour::WHITE ? &white_ai : &black_ai;
+            AIManager* player_two = turn == Colour::WHITE ? &black_ai : &white_ai;
 
             // time how long it takes to compute the test case
             int plies = 0;

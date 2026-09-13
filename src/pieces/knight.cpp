@@ -24,7 +24,7 @@ tracked_array<Move, MAX_NUM_MOVES> get_knight_moves(
         Bitboard targets = KNIGHT_ATTACKS[from] & ~own_pieces;
         while (targets) {
             Square to = pop_lsb(targets);
-            moves.emplace_back(from, to, KNIGHT);
+            moves.emplace_back(from, to, PieceType::KNIGHT);
         }
     }
 

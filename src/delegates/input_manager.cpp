@@ -86,7 +86,7 @@ void InputManager::handle_attempted_move(Square click_pos) {
     tracked_array<Move, MAX_NUM_MOVES> legal_moves = get_selected_moves();
     for(Move move : legal_moves) {
         if(move.to == click_pos) {
-            if(move.promotion_piece != NONE) {
+            if(move.promotion_piece != PieceType::NONE) {
                 PieceType prom_type = get_prom_choice();
                 move.promotion_piece = prom_type;
             }

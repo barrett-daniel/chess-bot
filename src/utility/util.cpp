@@ -57,20 +57,20 @@ bool contains(const std::vector<Move>& moves, const Move& move) {
 
 std::string to_string_piece(PieceType piece) {
     switch (piece) {
-        case PAWN:   return "";
-        case KNIGHT: return "n";
-        case BISHOP: return "b";
-        case ROOK:   return "r";
-        case QUEEN:  return "q";
-        case KING:   return "k";
-        case NONE:   return "NONE";
+        case PieceType::PAWN:   return "";
+        case PieceType::KNIGHT: return "n";
+        case PieceType::BISHOP: return "b";
+        case PieceType::ROOK:   return "r";
+        case PieceType::QUEEN:  return "q";
+        case PieceType::KING:   return "k";
+        case PieceType::NONE:   return "NONE";
     }
 }
 
 std::string to_string_piece_colour(PieceType piece, Colour side) {
     std::string piece_str = to_string_piece(piece);
 
-    if (side == WHITE) {
+    if (side == Colour::WHITE) {
         std::transform(piece_str.begin(), piece_str.end(), piece_str.begin(), ::toupper);
     }
 
@@ -135,9 +135,9 @@ void log_bitboard(const Bitboard& bb) {
 
 bool is_game_over(GameState state) {
     switch (state) {
-        case CHECKMATE:
-        case STALEMATE: return true;
-        case UNFINISHED:
-        case CHECK: return false;
+        case GameState::CHECKMATE:
+        case GameState::STALEMATE: return true;
+        case GameState::UNFINISHED:
+        case GameState::CHECK: return false;
     }
 }

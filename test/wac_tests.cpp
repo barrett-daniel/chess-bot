@@ -26,13 +26,13 @@ TEST_SUITE("Win At Chess") {
     PieceType to_piece_type(char c) {
         c = std::tolower(c);
         switch (c) {
-            case 'q': return QUEEN;
-            case 'k': return KING;
-            case 'r': return ROOK;
-            case 'b': return BISHOP;
-            case 'n': return KNIGHT;
-            case 'p': return PAWN;
-            default: return NONE;
+            case 'q': return PieceType::QUEEN;
+            case 'k': return PieceType::KING;
+            case 'r': return PieceType::ROOK;
+            case 'b': return PieceType::BISHOP;
+            case 'n': return PieceType::KNIGHT;
+            case 'p': return PieceType::PAWN;
+            default: return PieceType::NONE;
         }
     }
 
@@ -69,9 +69,9 @@ TEST_SUITE("Win At Chess") {
         if (san.back() == 'x') san.pop_back();
 
         // Moving piece: letter for piece, or PAWN if absent
-        PieceType piece = PAWN;
+        PieceType piece = PieceType::PAWN;
         PieceType first_char_type = to_piece_type(san[0]);
-        if (first_char_type != NONE) {
+        if (first_char_type != PieceType::NONE) {
             piece = first_char_type;
             san.erase(0, 1);
         }

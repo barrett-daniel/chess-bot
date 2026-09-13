@@ -71,7 +71,7 @@ tracked_array<Move, MAX_NUM_MOVES> get_rook_moves(
     Bitboard own_pieces_bb,
     Bitboard occupancy_bb
 ) {
-    return get_sliding_piece_moves(from_bb, own_pieces_bb, occupancy_bb, get_rook_attacks, ROOK);
+    return get_sliding_piece_moves(from_bb, own_pieces_bb, occupancy_bb, get_rook_attacks, PieceType::ROOK);
 }
 
 tracked_array<Move, MAX_NUM_MOVES> get_bishop_moves(
@@ -79,7 +79,7 @@ tracked_array<Move, MAX_NUM_MOVES> get_bishop_moves(
     Bitboard own_pieces_bb,
     Bitboard occupancy_bb
 ) {
-    return get_sliding_piece_moves(from_bb, own_pieces_bb, occupancy_bb, get_bishop_attacks, BISHOP);
+    return get_sliding_piece_moves(from_bb, own_pieces_bb, occupancy_bb, get_bishop_attacks, PieceType::BISHOP);
 }
 
 tracked_array<Move, MAX_NUM_MOVES> get_queen_moves(
@@ -87,8 +87,8 @@ tracked_array<Move, MAX_NUM_MOVES> get_queen_moves(
     Bitboard own_pieces_bb,
     Bitboard occupancy_bb
 ) {
-    auto rook_moves = get_sliding_piece_moves(from_bb, own_pieces_bb, occupancy_bb, get_rook_attacks, QUEEN);
-    auto bishop_moves = get_sliding_piece_moves(from_bb, own_pieces_bb, occupancy_bb, get_bishop_attacks, QUEEN);
+    auto rook_moves = get_sliding_piece_moves(from_bb, own_pieces_bb, occupancy_bb, get_rook_attacks, PieceType::QUEEN);
+    auto bishop_moves = get_sliding_piece_moves(from_bb, own_pieces_bb, occupancy_bb, get_bishop_attacks, PieceType::QUEEN);
 
     rook_moves.insert(rook_moves.end(), bishop_moves.begin(), bishop_moves.end());
     return rook_moves;

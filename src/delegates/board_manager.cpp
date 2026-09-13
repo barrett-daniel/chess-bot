@@ -23,7 +23,7 @@ BoardManager::BoardManager(const std::string fen) {
 
     // determine whose first to move
     std::string turn_config_str = components[FEN_TURN_CONFIG];
-    bs.turn = turn_config_str == "w" ? WHITE : BLACK;
+    bs.turn = turn_config_str == "w" ? Colour::WHITE : Colour::BLACK;
 
     // initalise board data
     std::string board_config_str = components[FEN_BOARD_CONFIG];
@@ -119,7 +119,7 @@ void BoardManager::make_move(const Move& move) {
     history.push(bs);
     bs.en_passant_square = NULL_SQ;
 
-    if (side == BLACK) {
+    if (side == Colour::BLACK) {
         ++bs.full_move_count;
     }
 
@@ -133,7 +133,7 @@ void BoardManager::make_move(const Move& move) {
 
     // pawn logic
     if(move.moved_piece == PieceType::PAWN) {
-        int forward = side == WHITE ? BOARD_SIZE : -BOARD_SIZE;
+        int forward = side == Colour::WHITE ? BOARD_SIZE : -BOARD_SIZE;
 
         // en-passant capture
         if(move.is_en_passant) {
@@ -389,7 +389,7 @@ bool BoardManager::valid_q_castle(Square move_from, Colour side, bool in_check) 
 
     if (in_check) return false;
 
-    Square rook_pos = side == WHITE ? W_QUEEN_ROOK_START_POS : B_QUEEN_ROOK_START_POS;
+    Square rook_pos = side == Colour::WHITE ? W_QUEEN_ROOK_START_POS : B_QUEEN_ROOK_START_POS;
     return valid_castle(move_from, rook_pos, side, false);
 }
 
@@ -398,7 +398,7 @@ bool BoardManager::valid_k_castle(Square move_from, Colour side, bool in_check) 
 
     if (in_check) return false;
 
-    Square rook_pos = side == WHITE ? W_KING_ROOK_START_POS : B_KING_ROOK_START_POS;
+    Square rook_pos = side == Colour::WHITE ? W_KING_ROOK_START_POS : B_KING_ROOK_START_POS;
     return valid_castle(move_from, rook_pos, side, true);
 
 }
@@ -469,10 +469,10 @@ Bitboard BoardManager::get_delta_bb(Square a, Square b) {
 // ----------------------------------------------
 
 GameState BoardManager::get_game_state(const tracked_array<Move, MAX_NUM_MOVES>& legal_moves, bool in_check) {
-    if (legal_moves.empty()) return in_check ? CHECKMATE : STALEMATE;
-    if (in_check) return CHECK;
+    if (legal_moves.empty()) return in_check ? GameState::CHECKMATE : GameState::STALEMATE;
+    if (in_check) return GameState::CHECK;
 
-    return UNFINISHED;
+    return GameState::UNFINISHED;
 }
 
 GameState BoardManager::get_game_state() {
