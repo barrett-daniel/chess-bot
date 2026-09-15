@@ -17,6 +17,7 @@ class BoardManager {
 
         GameState get_game_state(const tracked_array<Move, MAX_NUM_MOVES>& legal_moves, bool in_check);
         GameState get_game_state();
+        bool insufficient_material();
         bool is_in_check(Colour side);
 
         BoardState& get_bs();

@@ -4,7 +4,5 @@ Version Tag, Position 1 (ms), Position 2 (ms), Position 3 (ms), Position 4 (ms),
 1.3.2 Popcount,99034, 178735, 5742, 299224, 388276, 158798
 1.3.3 Branchless BoardState Bitboards,36107, 124860, 4632, 80489, 231463, 69363
 1.3.4 50-move rule,35517, 124258, 4658, 80227, 229830, 71167
-static zhash,43377, 151007, 5151, 96291, 271684, 87545
-incremental zhash 1,45935, 156641, 5299, 98989, 282067, 89876
-incremental zhash 2,37169, 128326, 4847, 81878, 236389, 72985
-incremental zhash 3,35934, 123363, 4598, 78468, 226438, 70672
+1.3.5 zhashing for 3-fold repetition,35934, 123363, 4598, 78468, 226438, 70672
+1.3.6 draw by insufficient material,36375, 124594, 4728, 79449, 229953, 70981

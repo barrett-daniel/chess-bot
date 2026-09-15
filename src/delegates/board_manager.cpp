@@ -592,6 +592,8 @@ GameState BoardManager::get_game_state(const tracked_array<Move, MAX_NUM_MOVES>&
         }
     }
 
+    if (insufficient_material()) [[unlikely]] return GameState::DRAW;
+
     if (in_check) return GameState::CHECK;
 
     return GameState::UNFINISHED;
@@ -600,6 +602,35 @@ GameState BoardManager::get_game_state(const tracked_array<Move, MAX_NUM_MOVES>&
 GameState BoardManager::get_game_state() {
     bool in_check = is_in_check(bs.turn);
     return get_game_state(get_legal_moves(get_moves(bs.turn, bs), in_check), in_check);
+}
+
+bool BoardManager::insufficient_material() {
+    // NOTE: king + bishop vs. king + bishop is not technically insufficient material
+    // however so long as both players possess a few brain cells it is always a draw
+    // in practise. So we say it is insufficient material. It's not worth the extra compute
+    // and effort for STRICT modelling of the rules
+
+    uint8_t white_piece_count = std::popcount(bs.get_bb(Colour::WHITE, PieceType::NONE));
+    uint8_t black_piece_count = std::popcount(bs.get_bb(Colour::BLACK, PieceType::NONE));
+
+    // K vs. K
+    if (white_piece_count == 1 && black_piece_count == 1) [[unlikely]] return true;
+
+    bool white_heavy = bs.get_bb(Colour::WHITE, PieceType::QUEEN)  ||
+                        bs.get_bb(Colour::WHITE, PieceType::ROOK)  ||
+                        bs.get_bb(Colour::WHITE, PieceType::PAWN);
+    bool black_heavy = bs.get_bb(Colour::BLACK, PieceType::QUEEN)  ||
+                        bs.get_bb(Colour::BLACK, PieceType::ROOK)  ||
+                        bs.get_bb(Colour::BLACK, PieceType::PAWN);
+
+    if (white_heavy || black_heavy) return false;
+
+    uint8_t white_minor_piece_count = std::popcount(bs.get_bb(Colour::WHITE, PieceType::BISHOP)) + std::popcount(bs.get_bb(Colour::WHITE, PieceType::KNIGHT));
+    uint8_t black_minor_piece_count = std::popcount(bs.get_bb(Colour::BLACK, PieceType::BISHOP)) + std::popcount(bs.get_bb(Colour::BLACK, PieceType::KNIGHT));
+
+    if (white_minor_piece_count <= 1 && black_minor_piece_count <= 1) return true;
+
+    return false;
 }
 
 bool BoardManager::is_in_check(Colour side) {
