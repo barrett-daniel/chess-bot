@@ -8,7 +8,7 @@
 class BoardManager {
     public:
         BoardManager() = default;
-        BoardManager(std::string fen);
+        BoardManager(const std::string& fen);
 
         void make_move(const Move& move);
         void undo_move();
@@ -42,5 +42,5 @@ class BoardManager {
         Bitboard get_delta_bb(Square a, Square b);
 
         BoardState bs;
-        std::stack<BoardState> history; 
+        std::vector<BoardState> history;
 };

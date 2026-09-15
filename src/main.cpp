@@ -12,12 +12,13 @@ OTHER:
 - GUI improvements:
     - Options of how to use app: play against another person, play against bot, etc.
     - offload AI work to background thread to not buffer main thread
-    - stalemate / draw
     - cache is in check / stalemate?
-    - 50 move rule i.e. halfmove count
+    - 3-fold repetition
+- could optimise valid_castle by removing delta_bb by using precomputed constant BBs for king path
+- only two kings on board == draw
 
 MOVE OPTAMISATION:
-- rework history into undo_structs
+-
 
 AI OPTAMISATION:
 - Move ordering / sorting moves
@@ -48,6 +49,7 @@ https://grandchesstree.com/tools
 #include "delegates/input_manager.hpp"
 #include "delegates/move_generator.hpp"
 #include "delegates/ai_manager.hpp"
+#include "delegates/zobrist_hashing.hpp"
 #include "utility/logger.hpp"
 
 int main(int argc, char* argv[]) {
@@ -59,13 +61,15 @@ int main(int argc, char* argv[]) {
     SDL_Window* window = SDL_CreateWindow(WINDOW_NAME, WINDOW_DIM, WINDOW_DIM, 0);
     ASSERT(window, "SDL window failed to initalise - " << SDL_GetError());
 
+    init_zhashing();
+    initalise_attack_arrays();
+
     const Colour player = Colour::WHITE;
     SDL_Renderer* SDL_renderer = SDL_CreateRenderer(window, NULL); 
     Renderer renderer(SDL_renderer, player);
     BoardManager board_manager(START_FEN);
     InputManager input_manager(player, board_manager);
     AIManager ai_manager(!player);
-    initalise_attack_arrays();
 
     const int frame_delay = 1000 / FPS;
     uint32_t frame_start;
@@ -115,7 +119,6 @@ int main(int argc, char* argv[]) {
         if (frame_delay > frame_time) SDL_Delay(frame_delay - frame_time);
     }
 
-    std::cout << std::is_trivially_copyable_v<Move>;
     SDL_DestroyWindow(window);
     SDL_Quit();
     return 0;

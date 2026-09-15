@@ -3,6 +3,7 @@
 #include <sstream>
 #include <utility>
 
+#include "zobrist_hashing.hpp"
 #include "../utility/logger.hpp"
 #include "../pieces/pieces.hpp"
 
@@ -10,8 +11,9 @@
 // Constructor
 // ----------------------------------------------
 
-BoardManager::BoardManager(const std::string fen) {
+BoardManager::BoardManager(const std::string& fen) {
     LOG_TRACE;
+    history.reserve(50); // allocate sufficiently large amount of space to prevent vector resizing
 
     // decompose FEN into component sections
     std::stringstream ss(fen);
@@ -103,6 +105,7 @@ BoardManager::BoardManager(const std::string fen) {
         : 1;
 
     bs.pinned_sqs = calc_pinned_sqs();
+    bs.hash = zhash(bs);
 }
 
 // ----------------------------------------------
@@ -114,71 +117,119 @@ void BoardManager::make_move(const Move& move) {
     LOG("Making move.from: " + to_string_coord(move.from) + 
         " move.to: " + to_string_coord(move.to)
     );
+    history.push_back(bs); // copy and store history
 
+    // As we process the making of a move we incrementally update the zobrist hash
+    // of the board state. This is because it is more efficient then making all the
+    // board state changes and then fully-recomputing the resulting hash. This is
+    // possible because zhashing is based on XOR operations which cancel out (x XOR x := 0).
+    // So to update the hash we: take the existing hash, XOR it with the prior hash key used
+    // based on the prior board state element, update the board state, XOR the hash with the hash key
+    // for the new board state element.
+
+    // some aliases
     Colour side = bs.turn;
-    history.push(bs);
-    bs.en_passant_square = NULL_SQ;
+    uint64_t& h = bs.hash;
 
+    if (bs.en_passant_square != NULL_SQ) {
+        h ^= ZEP_FILE[bs.en_passant_square & (BOARD_SIZE - 1)];
+    }
+    bs.en_passant_square = NULL_SQ; // no hash XOR needed as en-passant file is NULL (i.e. h XOR 0)
+
+    // update move counts
     bs.half_move_count++;
     if (side == Colour::BLACK) {
         ++bs.full_move_count;
     }
 
-    // reset all bitboards
-    for(Bitboard& bb : bs.bbs) {
-        if (is_bit(bb, move.to)) {
-            bs.half_move_count = 0;
-            clear_bit(bb, move.to);
-            break;
+    // normal captures
+    for (uint8_t c = 0; c < NUM_COLOURS; ++c) {
+        for (uint8_t pt = 0; pt < NUM_PIECE_TYPES; ++pt) {
+            Bitboard& bb = bs.get_bb(static_cast<Colour>(c), static_cast<PieceType>(pt));
+
+            if (is_bit(bb, move.to)) {
+                // update hash and clear bit of captured piece
+                h ^= ZPIECE_SQ[c][pt][move.to];
+                clear_bit(bb, move.to);
+
+                // captures are an irreversible move -> reset counter
+                bs.half_move_count = 0;
+
+                // jump as only one piece can occupy move.to
+                goto capture_done;
+            }
         }
     }
+    capture_done: // goto label
 
-    // update moved piece bb
+    // update the bitboard for the moved piece
+    h ^= ZPIECE_SQ[static_cast<uint8_t>(side)][static_cast<uint8_t>(move.moved_piece)][move.from];
+    h ^= ZPIECE_SQ[static_cast<uint8_t>(side)][static_cast<uint8_t>(move.moved_piece)][move.to];
     Bitboard& bb = bs.get_bb(side, move.moved_piece);
     clear_bit(bb, move.from);
     set_bit(bb, move.to);
 
-    // pawn logic
+    // pawn logic edge cases
     if(move.moved_piece == PieceType::PAWN) {
-        bs.half_move_count = 0;
         int forward = side == Colour::WHITE ? BOARD_SIZE : -BOARD_SIZE;
+
+        // pawn moves are irreversible -> reset counter
+        bs.half_move_count = 0;
 
         // en-passant capture
         if(move.is_en_passant) {
             Bitboard& enemy_pawns = bs.get_bb(!side, PieceType::PAWN);
-            clear_bit(enemy_pawns, move.to - forward);
+            Square captured_sq = move.to - forward;
+
+            // update hash and clear the bit of the taken pawn
+            h ^= ZPIECE_SQ[static_cast<uint8_t>(!side)][static_cast<uint8_t>(PieceType::PAWN)][captured_sq];
+            clear_bit(enemy_pawns, captured_sq);
         }
 
         // making a double push
         if(abs(move.from - move.to) == 2 * BOARD_SIZE) {
+            h ^= ZEP_FILE[bs.en_passant_square & (BOARD_SIZE - 1)]; // update enpassant file hash
             bs.en_passant_square = move.from + forward;
         }
 
         // promotion
         if(move.promotion_piece != PieceType::NONE) {
+            // above we set the bit for move.to but we need to remove it again as pawn promotions
+            // are an edge case and obviously are promoted to piece
+            h ^= ZPIECE_SQ[static_cast<uint8_t>(side)][static_cast<uint8_t>(PieceType::PAWN)][move.to];
             clear_bit(bb, move.to);
+
+            // set the bit for the promoted piece
+            h ^= ZPIECE_SQ[static_cast<uint8_t>(side)][static_cast<uint8_t>(move.promotion_piece)][move.to];
             Bitboard& prom_bb = bs.get_bb(side, move.promotion_piece);
             set_bit(prom_bb, move.to);
         }
     }
 
     // castling
+    h ^= ZCASTLING[bs.castling_rights & 0xF]; // cancel out old castling rights from hash
     if(move.q_castle) [[unlikely]] process_q_castle(side);
     if(move.k_castle) [[unlikely]] process_k_castle(side);
     update_castling_rights(move.from);
     update_castling_rights(move.to);
+    h ^= ZCASTLING[bs.castling_rights & 0xF]; // encode new castling rights in hash
 
     update_poly_bbs();
+
     bs.turn = !bs.turn;
+    h ^= ZSIDE; // hash for changing sides is always XOR'd
+
     bs.pinned_sqs = calc_pinned_sqs();
+
+    ASSERT(bs.hash == zhash(bs), "Non-matching incremental hash and static hash calculations");
     LOG("Alternating turn, turn is now: " + to_string_colour(bs.turn));
 }
 
 void BoardManager::undo_move() {
     LOG_TRACE;
 
-    bs = history.top();
-    history.pop();
+    bs = history.back();
+    history.pop_back();
 }
 
 void inline BoardManager::update_castling_rights(Square move_pos) {
@@ -284,6 +335,12 @@ void BoardManager::process_castle(
     set_bit(rook_bb, rook_to);
     clear_bit(king_bb, king_from);
     set_bit(king_bb, king_to);
+
+    // update hashes for rook position
+    int c = static_cast<uint8_t>(side);
+    int rook_pt = static_cast<uint8_t>(PieceType::ROOK);
+    bs.hash ^= ZPIECE_SQ[c][rook_pt][rook_from];
+    bs.hash ^= ZPIECE_SQ[c][rook_pt][rook_to];
 }
 
 tracked_array<Move, MAX_NUM_MOVES> BoardManager::get_legal_moves(const tracked_array<Move, MAX_NUM_MOVES>& moves, bool in_check) {
@@ -507,6 +564,34 @@ GameState BoardManager::get_game_state(const tracked_array<Move, MAX_NUM_MOVES>&
     if (bs.half_move_count >= 100) return GameState::DRAW; // 50 move rule
 
     if (legal_moves.empty()) return in_check ? GameState::CHECKMATE : GameState::DRAW; // checkmate or stalemate
+
+    if (bs.half_move_count >= 8) { // 3-fold repetition only possible after 8 half moves since last reset
+
+        // slice the history vector about lower and upper bounds for which a 3-fold repetition could occur.
+        // this is explicitly the moves between (inclusive) the last irreversible move (i.e. half move count) and
+        // the current move. We can also just check every other move as a matching hash could only
+        // be found on the previous move of the current side
+        //
+        // We then count matching hash occurrences to the current board state hash
+        // if the number of occurrences exceeds 3 -> 3-fold repetition
+        //
+        // Note: we take the upper bound as the previous move of the current side as `history.size().hash`
+        // vacuously always matches the `current_hash` (they're the same thing). So init the number of occurences
+        // to 1 and don't search the last element in the vector.
+
+        uint64_t current_hash = bs.hash;
+        int occurrences = 1;
+
+        int lower_bound = static_cast<int>(history.size()) - bs.half_move_count;
+        int upper_bound = static_cast<int>(history.size()) - 2;
+        for (int i = lower_bound; i <= upper_bound; i += 2) {
+            if (history[i].hash == current_hash) {
+                occurrences++;
+                if (occurrences >= 3) return GameState::DRAW; // 3-fold repetition
+            }
+        }
+    }
+
     if (in_check) return GameState::CHECK;
 
     return GameState::UNFINISHED;

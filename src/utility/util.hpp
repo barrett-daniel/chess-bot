@@ -51,6 +51,7 @@ constexpr int WINDOW_DIM = BOARD_SIZE * CELL_SIZE;
 typedef uint64_t Bitboard;
 typedef uint8_t Square;
 constexpr Square NULL_SQ = 64;
+constexpr uint8_t NUM_SQUARES = 64;
 
 extern Bitboard KNIGHT_ATTACKS[BOARD_SIZE * BOARD_SIZE];
 extern Bitboard PAWN_ATTACKS_W[BOARD_SIZE * BOARD_SIZE];
@@ -183,6 +184,7 @@ extern std::vector<std::pair<int, Bitboard>> KNIGHT_DIRECTIONS;
 constexpr uint8_t MAX_NUM_MOVES = 218; // source: https://lichess.org/@/Tobs40/blog/why-a-reachable-position-can-have-at-most-218-playable-moves/a5xdxeqs
 
 // Data types
+constexpr uint8_t NUM_COLOURS = 2;
 enum class Colour : uint8_t {
     WHITE, BLACK
 };
@@ -191,10 +193,12 @@ inline Colour operator!(Colour c) {
     return c == Colour::WHITE ? Colour::BLACK : Colour::WHITE;
 }
 
+constexpr uint8_t NUM_PIECE_TYPES = 6; // note: 7 == NONE
 enum class PieceType : uint8_t {
     PAWN, KNIGHT, BISHOP, ROOK, QUEEN, KING, NONE
 };
 
+constexpr uint8_t NUM_GAME_STATES = 4;
 enum class GameState : uint8_t {
     CHECK,
     CHECKMATE,
@@ -284,8 +288,9 @@ class BoardState {
 
         uint16_t full_move_count;
         uint8_t half_move_count; // half move logic for 50-move draw rule is not yet implemented
+        uint64_t hash;
 
-        BoardState() : bbs({}), all_pieces(0), turn(Colour::WHITE), castling_rights(0), en_passant_square(NULL_SQ), full_move_count(0), half_move_count(0) {}
+        BoardState() : bbs({}), all_pieces(0), turn(Colour::WHITE), castling_rights(0), en_passant_square(NULL_SQ), full_move_count(0), half_move_count(0), hash(0) {}
 
         inline Bitboard& get_bb(Colour side, PieceType type) {
             return bbs[static_cast<uint8_t>(side) * 7 + static_cast<uint8_t>(type)];
