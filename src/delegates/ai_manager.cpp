@@ -66,17 +66,28 @@ Move AIManager::get_move(BoardManager& board_manager, int depth) {
 
     Move best = valid_moves[0];
 
-    int alpha = INT_MIN;
-    int beta = INT_MAX;
+    for (int iterative_depth = 1; iterative_depth <= depth; iterative_depth++) {
 
-    for(const Move& move : valid_moves) {
-        board_manager.make_move(move);
-        int score = min_max(board_manager, depth - 1, false, alpha, beta);
+        // make the best move from the last iteration
+        board_manager.make_move(best);
+        int outer_score = min_max(board_manager, iterative_depth - 1, false, INT_MIN, INT_MAX);
         board_manager.undo_move();
 
-        if (score > alpha) {
-            alpha = score;
-            best = move;
+        // store the alpha value
+        int alpha = outer_score;
+        int beta = INT_MAX;
+
+        for(const Move& move : valid_moves) {
+            if (move == best) continue;
+
+            board_manager.make_move(move);
+            int score = min_max(board_manager, iterative_depth - 1, false, alpha, beta);
+            board_manager.undo_move();
+
+            if (score > alpha) {
+                alpha = score;
+                best = move;
+            }
         }
     }
     return best;
