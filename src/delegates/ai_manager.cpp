@@ -29,6 +29,33 @@ AIManager::AIManager(Colour ai_colour)
     std::srand(std::time(nullptr));
 }
 
+// OLD GET_MOVE ------------------------------------------------------------
+//
+// Move AIManager::get_move(BoardManager& board_manager, int depth) {
+//     LOG_TRACE;
+//
+//     calls = 0;
+//     BoardState& bs = board_manager.get_bs();
+//     tracked_array<Move, MAX_NUM_MOVES> moves = get_moves(bs.turn, bs);
+//     tracked_array<Move, MAX_NUM_MOVES> valid_moves = board_manager.get_legal_moves(moves);
+//
+//     Move best = valid_moves[0];
+//     int alpha = INT_MIN;
+//     int beta = INT_MAX;
+//
+//     for(Move move : valid_moves) {
+//         board_manager.make_move(move);
+//         int score = min_max(board_manager, depth - 1, false, alpha, beta);
+//         board_manager.undo_move();
+//
+//         if (score > alpha) {
+//             alpha = score;
+//             best = move;
+//         }
+//     }
+//     return best;
+// }
+
 Move AIManager::get_move(BoardManager& board_manager, int depth) {
     LOG_TRACE;
 
@@ -38,10 +65,11 @@ Move AIManager::get_move(BoardManager& board_manager, int depth) {
     tracked_array<Move, MAX_NUM_MOVES> valid_moves = board_manager.get_legal_moves(moves);
 
     Move best = valid_moves[0];
+
     int alpha = INT_MIN;
     int beta = INT_MAX;
 
-    for(Move move : valid_moves) {
+    for(const Move& move : valid_moves) {
         board_manager.make_move(move);
         int score = min_max(board_manager, depth - 1, false, alpha, beta);
         board_manager.undo_move();
@@ -71,7 +99,7 @@ int AIManager::min_max(BoardManager& board_manager, int depth, bool is_maximisin
     }
 
     int best_score = is_maximising ? INT_MIN : INT_MAX;
-    for (Move move : valid_moves) {
+    for (const Move& move : valid_moves) {
         board_manager.make_move(move);
         int score = min_max(board_manager, depth - 1, !is_maximising, alpha, beta);
 
@@ -94,11 +122,11 @@ int AIManager::min_max(BoardManager& board_manager, int depth, bool is_maximisin
 
 // simple score evaluator based upon how many pieces are on the board
 // and what their associated value is
-int AIManager::eval_board(BoardState& bs) {
+int AIManager::eval_board(const BoardState& bs) {
     int score = 0;
 
-    Bitboard& white_pawns = bs.get_bb(Colour::WHITE, PieceType::PAWN);
-    Bitboard& black_pawns = bs.get_bb(Colour::BLACK, PieceType::PAWN);
+    const Bitboard& white_pawns = bs.get_bb(Colour::WHITE, PieceType::PAWN);
+    const Bitboard& black_pawns = bs.get_bb(Colour::BLACK, PieceType::PAWN);
 
     // count pieces
     // pawns
@@ -127,8 +155,8 @@ int AIManager::eval_board(BoardState& bs) {
     score += (std::popcount(white_pawns & EXTENDED_CENTRE) - std::popcount(black_pawns & EXTENDED_CENTRE)) * EXTENDED_CENTRE_PAWN_VAL;
 
     // king safety
-    Bitboard& white_king = bs.get_bb(Colour::WHITE, PieceType::KING);
-    Bitboard& black_king = bs.get_bb(Colour::BLACK, PieceType::KING);
+    const Bitboard& white_king = bs.get_bb(Colour::WHITE, PieceType::KING);
+    const Bitboard& black_king = bs.get_bb(Colour::BLACK, PieceType::KING);
     score += (std::popcount(white_king & KING_SAFETY) - std::popcount(black_king & KING_SAFETY)) * KING_SAFETY_VAL;
 
     return ai_colour == Colour::WHITE ? score : -score; // flip so score is from AI's perspective

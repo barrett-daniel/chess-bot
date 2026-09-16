@@ -16,6 +16,6 @@ class AIManager {
     private:
         Colour ai_colour;
 
-        int eval_board(BoardState& bs);
+        int eval_board(const BoardState &bs);
 
 };

@@ -6,3 +6,4 @@ Version Tag, Position 1 (ms), Position 2 (ms), Position 3 (ms), Position 4 (ms),
 1.3.4 50-move rule,35517, 124258, 4658, 80227, 229830, 71167
 1.3.5 zhashing for 3-fold repetition,35934, 123363, 4598, 78468, 226438, 70672
 1.3.6 draw by insufficient material,36375, 124594, 4728, 79449, 229953, 70981
+1.3.7 const references to reduce copies in AI Manager,37314, 123104, 4619, 78562, 226196, 69082
