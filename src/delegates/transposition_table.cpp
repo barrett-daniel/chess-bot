@@ -1,5 +1,7 @@
 #include "transposition_table.hpp"
 
+#include <algorithm>
+
 constexpr int TT_SIZE_MB = 4;
 
 TranspositionTable::TranspositionTable(){

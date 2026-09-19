@@ -9,8 +9,7 @@ class AIManager {
     public:
         AIManager(Colour ai_colour);
         Move get_move(BoardManager& board_manager, int depth);
-        int min_max(BoardManager& board_manager, int depth, bool is_maximising, int alpha, int beta);
-        int min_max(BoardManager& board_manager, int depth, bool is_maximising);
+        int negamax(BoardManager& board_manager, int depth, int alpha, int beta);
 
     private:
         Colour ai_colour;

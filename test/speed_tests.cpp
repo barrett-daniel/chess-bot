@@ -15,7 +15,7 @@
  *  These tests should be ran in RELEASE mode.
  */
 TEST_SUITE("Speed Tests") {
-    constexpr const char* RESULTS_FPATH = "../../test/resources/speed_test_results_mac.csv";
+    constexpr const char* RESULTS_FPATH = "../../test/resources/speed_test_results.csv";
 
     // parameters for run configuration
     constexpr int TEST_DEPTH = 5;

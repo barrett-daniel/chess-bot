@@ -71,7 +71,7 @@ Move AIManager::get_move(BoardManager& board_manager, int depth) {
 
         // make the best move from the last iteration
         board_manager.make_move(best);
-        int outer_score = min_max(board_manager, iterative_depth - 1, false, INT_MIN, INT_MAX);
+        int outer_score = -negamax(board_manager, iterative_depth - 1, INT_MIN, INT_MAX);
         board_manager.undo_move();
 
         // store the alpha value
@@ -82,7 +82,7 @@ Move AIManager::get_move(BoardManager& board_manager, int depth) {
             if (move == best) continue;
 
             board_manager.make_move(move);
-            int score = min_max(board_manager, iterative_depth - 1, false, alpha, beta);
+            int score = -negamax(board_manager, iterative_depth - 1, alpha, beta);
             board_manager.undo_move();
 
             if (score > alpha) {
@@ -94,7 +94,7 @@ Move AIManager::get_move(BoardManager& board_manager, int depth) {
     return best;
 }
 
-int AIManager::min_max(BoardManager& board_manager, int depth, bool is_maximising,  int alpha, int beta) {
+int AIManager::negamax(BoardManager& board_manager, int depth, int alpha, int beta) {
     LOG_TRACE;
     BoardState& bs = board_manager.get_bs();
 
@@ -112,7 +112,7 @@ int AIManager::min_max(BoardManager& board_manager, int depth, bool is_maximisin
         }
     }
 
-    if(depth == 0) return eval_board(bs); // exit
+    if(depth == 0) return (bs.turn == ai_colour ? 1 : -1) * eval_board(bs); // exit
 
     // generate moves
     bool in_check = board_manager.is_in_check(bs.turn);
@@ -124,7 +124,7 @@ int AIManager::min_max(BoardManager& board_manager, int depth, bool is_maximisin
     // as these depend on the board state. Could move this above the TT entry but it would be much slower. Something to
     // consider later
     switch (board_manager.get_game_state(valid_moves, in_check)) {
-        case GameState::CHECKMATE: return bs.turn == ai_colour ? -(MATE_VALUE + depth) : (MATE_VALUE + depth);
+        case GameState::CHECKMATE: return -(MATE_VALUE + depth);
         case GameState::DRAW: return 0;
         default: break;
     }
@@ -133,30 +133,23 @@ int AIManager::min_max(BoardManager& board_manager, int depth, bool is_maximisin
     // TBD
 
     // iterate over moves to find search tree
-    int best_score = is_maximising ? INT_MIN : INT_MAX;
+    int best_score = INT_MIN;
     const int original_alpha = alpha;
     const int original_beta = beta;
 
     for (const Move& move : valid_moves) {
         board_manager.make_move(move);
-        int score = min_max(board_manager, depth - 1, !is_maximising, alpha, beta);
-
-        if (is_maximising) {
-            best_score = std::max(best_score, score);
-            alpha = std::max(alpha, score);
-        } else {
-            best_score = std::min(best_score, score);
-            beta = std::min(beta, score);
-        }
-
+        int score = -negamax(board_manager, depth - 1, -beta, -alpha);
         board_manager.undo_move();
 
-        if (beta <= alpha) break;
+        best_score = std::max(best_score, score);
+        alpha = std::max(alpha, score);
+        if (alpha >= beta) break;
     }
 
-    TTFlag flag = TTFlag::EXACT;
-    if      (best_score <= original_alpha) flag = TTFlag::UPPERBOUND;
-    else if (best_score >= original_beta)  flag = TTFlag::LOWERBOUND;
+    TTFlag flag = (best_score <= original_alpha) ? TTFlag::UPPERBOUND
+                   : (best_score >= original_beta) ? TTFlag::LOWERBOUND
+                   : TTFlag::EXACT;
 
     tt.store(bs.hash, best_score, depth, flag);
     return best_score;
