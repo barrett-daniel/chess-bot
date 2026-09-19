@@ -90,15 +90,7 @@ int main(int argc, char* argv[]) {
         LOGGER_ON;
 
         if(board_manager.get_bs().turn == !player) {
-            auto start = std::chrono::high_resolution_clock::now();
-
             Move move = ai_manager.get_move(board_manager, AI_BASE_DEPTH);
-
-            auto end = std::chrono::high_resolution_clock::now();
-            auto duration_ms = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
-            std::cout << "AI calculation " << std::to_string(duration_ms) << " ms" << std::endl;;
-            std::cout << "calls: " << ai_manager.calls << std::endl;
-
             board_manager.make_move(move);
         }
 
