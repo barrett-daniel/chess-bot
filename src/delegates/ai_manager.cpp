@@ -21,9 +21,10 @@ constexpr uint16_t BISHOP_VALUE = 320;
 constexpr uint16_t ROOK_VALUE = 500;
 constexpr uint16_t QUEEN_VALUE = 900;
 
+constexpr int TT_SIZE_MB = 4;
+
 AIManager::AIManager(Colour ai_colour)
-  : ai_colour(ai_colour),
-    calls(0)
+  : ai_colour(ai_colour)
 {
     LOG_TRACE;
     std::srand(std::time(nullptr));
@@ -59,11 +60,11 @@ AIManager::AIManager(Colour ai_colour)
 Move AIManager::get_move(BoardManager& board_manager, int depth) {
     LOG_TRACE;
 
-    calls = 0;
     BoardState& bs = board_manager.get_bs();
     tracked_array<Move, MAX_NUM_MOVES> moves = get_moves(bs.turn, bs);
     tracked_array<Move, MAX_NUM_MOVES> valid_moves = board_manager.get_legal_moves(moves);
 
+    ASSERT(valid_moves.size() > 0, "Empty Valid Moves called on AImanager::get_move at root");
     Move best = valid_moves[0];
 
     for (int iterative_depth = 1; iterative_depth <= depth; iterative_depth++) {
@@ -97,19 +98,45 @@ int AIManager::min_max(BoardManager& board_manager, int depth, bool is_maximisin
     LOG_TRACE;
     BoardState& bs = board_manager.get_bs();
 
-    if(depth == 0) return eval_board(bs);
+    // tt logic to review already seen positions
+    TTEntry* entry = tt.at(bs.hash);
+    if (entry) {
+        if (entry->depth >= depth) {
+            switch (entry->flag) {
+                case TTFlag::EXACT: return entry->score;
+                case TTFlag::LOWERBOUND: alpha = std::max(alpha, entry->score); break;
+                case TTFlag::UPPERBOUND: beta  = std::min(beta,  entry->score); break;
+            }
 
+            if (alpha >= beta) return entry->score;
+        }
+    }
+
+    if(depth == 0) return eval_board(bs); // exit
+
+    // generate moves
     bool in_check = board_manager.is_in_check(bs.turn);
     tracked_array<Move, MAX_NUM_MOVES> moves = get_moves(bs.turn, bs);
     tracked_array<Move, MAX_NUM_MOVES> valid_moves = board_manager.get_legal_moves(moves, in_check);
 
+    // exit with score if game has ended
+    // NOTE: TT entries are checked before this and so TT cable could overlook 3-fold repetition and 50-move rule
+    // as these depend on the board state. Could move this above the TT entry but it would be much slower. Something to
+    // consider later
     switch (board_manager.get_game_state(valid_moves, in_check)) {
         case GameState::CHECKMATE: return bs.turn == ai_colour ? -(MATE_VALUE + depth) : (MATE_VALUE + depth);
         case GameState::DRAW: return 0;
         default: break;
     }
 
+    // order moves
+    // TBD
+
+    // iterate over moves to find search tree
     int best_score = is_maximising ? INT_MIN : INT_MAX;
+    const int original_alpha = alpha;
+    const int original_beta = beta;
+
     for (const Move& move : valid_moves) {
         board_manager.make_move(move);
         int score = min_max(board_manager, depth - 1, !is_maximising, alpha, beta);
@@ -127,7 +154,11 @@ int AIManager::min_max(BoardManager& board_manager, int depth, bool is_maximisin
         if (beta <= alpha) break;
     }
 
-    calls++;
+    TTFlag flag = TTFlag::EXACT;
+    if      (best_score <= original_alpha) flag = TTFlag::UPPERBOUND;
+    else if (best_score >= original_beta)  flag = TTFlag::LOWERBOUND;
+
+    tt.store(bs.hash, best_score, depth, flag);
     return best_score;
 }
 
