@@ -172,11 +172,3 @@ tracked_array<Move, MAX_NUM_MOVES> get_moves(Colour side, BoardState& bs, PieceT
     }
     throw std::invalid_argument("get_moves called with unspecified piece");
 }
-
-void initalise_attack_arrays() {
-    init_knight_attacks();
-    init_king_attacks();
-    init_pawn_attacks(false);
-    init_pawn_attacks(true);
-    init_magic_bbs();
-}

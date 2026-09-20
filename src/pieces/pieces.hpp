@@ -5,3 +5,4 @@
 #include "knight.hpp"
 #include "sliding_pieces.hpp"
 #include "king.hpp"
+#include "magic_bitboard.hpp"

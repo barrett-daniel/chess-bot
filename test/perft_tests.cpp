@@ -3,6 +3,7 @@
 #include "perft.hpp"
 #include "test_util.hpp"
 #include "delegates/board_manager.hpp"
+#include "utility/start_up.hpp"
 
 // https://chessprogramming.org/Perft
 
@@ -19,7 +20,7 @@ TEST_SUITE("PERFT Tests") {
         REQUIRE_LE(depth, expected.size());
 
         SUBCASE(std::to_string(depth)) {
-            before_each();
+            init_static_data();
             BoardManager bm = BoardManager(fen);
             uint64_t nodes = perft(bm, depth);
             CHECK_EQ(nodes, expected[depth - 1]);
@@ -32,7 +33,7 @@ TEST_SUITE("PERFT Tests") {
      * necessary moves in order, then calling divide.
      */
     TEST_CASE("Util Check") {
-        // before_each();
+        // init_static_data();
         // BoardManager bm = BoardManager(START_FEN);
         // divide(bm, 6);
     }

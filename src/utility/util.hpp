@@ -13,11 +13,12 @@
 
 #ifdef NDEBUG
     const int FPS = 30;
-    constexpr int AI_BASE_DEPTH = 5;
+    constexpr int AI_MAX_DEPTH = 50;
+    constexpr int AI_SEARCH_TIME_MS = 2000;
     #define ASSERT(expr, msg) ((void)0)
 #else
     const int FPS = 5;
-    constexpr int AI_BASE_DEPTH = 3;
+    constexpr int AI_MAX_DEPTH = 25;
     #define ASSERT(expr, msg) \
         if (!(expr)) { \
             std::cerr << "*****" << std::endl << \
@@ -327,6 +328,11 @@ constexpr inline Square pop_lsb(Bitboard &bb) {
     Square index = std::countr_zero(bb);
     bb &= bb - 1;
     return index;
+}
+
+constexpr inline bool is_capture(const Move& move, const BoardState& bs) {
+    const Bitboard& enemy_pieces = bs.get_bb(!bs.turn, PieceType::NONE);
+    return is_bit(enemy_pieces, move.to);
 }
 
 template<typename T>

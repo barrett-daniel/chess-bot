@@ -48,9 +48,10 @@ https://grandchesstree.com/tools
 #include "delegates/renderer.hpp"
 #include "delegates/input_manager.hpp"
 #include "delegates/move_generator.hpp"
-#include "delegates/ai_manager.hpp"
-#include "delegates/zobrist_hashing.hpp"
+#include "delegates/ai/ai_manager.hpp"
+#include "utility/zobrist_hashing.hpp"
 #include "utility/logger.hpp"
+#include "utility/start_up.hpp"
 
 int main(int argc, char* argv[]) {
     LOGGER_ON;
@@ -61,15 +62,14 @@ int main(int argc, char* argv[]) {
     SDL_Window* window = SDL_CreateWindow(WINDOW_NAME, WINDOW_DIM, WINDOW_DIM, 0);
     ASSERT(window, "SDL window failed to initalise - " << SDL_GetError());
 
-    init_zhashing();
-    initalise_attack_arrays();
+    init_static_data();
 
     const Colour player = Colour::WHITE;
     SDL_Renderer* SDL_renderer = SDL_CreateRenderer(window, NULL); 
     Renderer renderer(SDL_renderer, player);
     BoardManager board_manager(START_FEN);
     InputManager input_manager(player, board_manager);
-    AIManager ai_manager(!player);
+    AIManager ai_manager(!player, board_manager);
 
     const int frame_delay = 1000 / FPS;
     uint32_t frame_start;
@@ -90,7 +90,7 @@ int main(int argc, char* argv[]) {
         LOGGER_ON;
 
         if(board_manager.get_bs().turn == !player) {
-            Move move = ai_manager.get_move(board_manager, AI_BASE_DEPTH);
+            auto [move, _] = ai_manager.get_move_until_time(AI_SEARCH_TIME_MS);
             board_manager.make_move(move);
         }
 

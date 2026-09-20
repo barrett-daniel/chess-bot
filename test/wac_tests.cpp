@@ -3,8 +3,9 @@
 #include <doctest/doctest.h>
 
 #include "test_util.hpp"
-#include "delegates/ai_manager.hpp"
+#include "delegates/ai/ai_manager.hpp"
 #include "delegates/board_manager.hpp"
+#include "utility/start_up.hpp"
 
 /**
  * Based upon the "Win At Chess" book by Fred Reinfeld (1958), this test suite runs 300 chess positions
@@ -254,8 +255,8 @@ TEST_SUITE("Win At Chess") {
     void run_ai_test_case(int index) {
         TestCaseData tc = parse_epd_line(read_line(index));
 
-        AIManager ai(tc.bm.get_bs().turn);
-        Move ai_move = ai.get_move(tc.bm, AI_TEST_DEPTH);
+        AIManager ai(tc.bm.get_bs().turn, tc.bm);
+        auto [ai_move, _] = ai.get_move_until_time(AI_SEARCH_TIME_MS);
 
         bool found_best = false;
         for (const Move& move : tc.best_moves)
@@ -282,7 +283,7 @@ TEST_SUITE("Win At Chess") {
      * Runs the entire database
      */
     TEST_CASE("Win At Chess") {
-        before_each();
+        init_static_data();
 
         for (int i = 0; i < NUM_CASES; ++i) {
             SUBCASE(("case " + std::to_string(i)).c_str()) {
@@ -298,7 +299,7 @@ TEST_SUITE("Win At Chess") {
     TEST_CASE("Run Specific") {
         constexpr int INDEX = 1;
 
-        before_each();
+        init_static_data();
         run_ai_test_case(INDEX);
     }
 }

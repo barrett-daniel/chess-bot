@@ -2,9 +2,10 @@
 
 #include "test_util.hpp"
 #include "delegates/board_manager.hpp"
+#include "utility/start_up.hpp"
 
 void run_test_case(const std::string& fen, const std::vector<Move> moves) {
-    before_each();
+    init_static_data();
 
     BoardManager bm = BoardManager(fen);
 

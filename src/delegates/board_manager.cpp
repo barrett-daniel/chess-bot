@@ -3,7 +3,7 @@
 #include <sstream>
 #include <utility>
 
-#include "zobrist_hashing.hpp"
+#include "../utility/zobrist_hashing.hpp"
 #include "../utility/logger.hpp"
 #include "../pieces/pieces.hpp"
 

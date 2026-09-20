@@ -1,14 +1,6 @@
 #pragma once
 #include "delegates/move_generator.hpp"
-#include "delegates/zobrist_hashing.hpp"
-
-/**
- * Initalises precomputed data used for chess model. Must be called before each test
- */
-inline void before_each() {
-    initalise_attack_arrays();
-    init_zhashing();
-}
+#include "utility/zobrist_hashing.hpp"
 
 #include "utility/util.hpp"
 

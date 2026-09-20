@@ -1,12 +1,10 @@
 #include "ai_manager.hpp"
-#include "../pieces/pieces.hpp"
-#include "../utility/logger.hpp"
 
 #include <cstdlib>
-#include <limits>
-#include <ctime>
-#include <math.h>
-#include <unordered_map>
+#include <chrono>
+
+#include "mvvlva.hpp"
+#include "../../utility/logger.hpp"
 
 constexpr int INF = 30'000; // just an obsurdly large score value for a chess position which does not result in underflow/overflow
 constexpr int MATE_VALUE = INT_MAX - 1000; // not so close to INT_MAX to prevent overflow
@@ -18,51 +16,21 @@ constexpr int CENTRE_PAWN_VAL = 25;
 constexpr int EXTENDED_CENTRE_PAWN_VAL = 15;
 constexpr int KING_SAFETY_VAL = 30;
 
-constexpr uint16_t PAWN_VALUE = 100;
-constexpr uint16_t KNIGHT_VALUE = 300;
-constexpr uint16_t BISHOP_VALUE = 320;
-constexpr uint16_t ROOK_VALUE = 500;
-constexpr uint16_t QUEEN_VALUE = 900;
-
 constexpr int TT_SIZE_MB = 4;
 
-static int MVV_LVA_SCORES[NUM_PIECE_TYPES][NUM_PIECE_TYPES]; // indexed [attacker][victim]
-
-AIManager::AIManager(Colour ai_colour)
-    : ai_colour(ai_colour), history_heuristic{} {
-    LOG_TRACE;
-
-    auto score_piece = [](PieceType pt) {
-        switch (pt) {
-            case PieceType::PAWN: return PAWN_VALUE;
-            case PieceType::KNIGHT: return KNIGHT_VALUE;
-            case PieceType::BISHOP: return BISHOP_VALUE;
-            case PieceType::ROOK: return ROOK_VALUE;
-            case PieceType::QUEEN: return QUEEN_VALUE;
-            case PieceType::KING: return static_cast<uint16_t>(10'000);
-            default: throw std::runtime_error("Unknown PieceType");
-        }
-    };
-
-    // init MVV_LVA_SCORES
-    for (int i = 0; i < NUM_PIECE_TYPES; i++) {
-        for (int j = 0; j < NUM_PIECE_TYPES; j++) {
-            auto attacker = static_cast<PieceType>(i);
-            auto victim = static_cast<PieceType>(j);
-            MVV_LVA_SCORES[i][j] = score_piece(victim) - score_piece(attacker);
-        }
-    }
-}
+AIManager::AIManager(Colour ai_colour, BoardManager& board_manager)
+    : board_manager(board_manager), ai_colour(ai_colour), history_heuristic{} {}
 
 /**
  * Fetches the AI's determination of the best move given the current board position
  *
- * @param board_manager containing the `BoardState` and other logic regarding the game state
- * @param depth for which to search to
+ * @param max_duration how long the AI is permitted to search for in milliseconds
  * @return the best `Move`
  */
-Move AIManager::get_move(BoardManager& board_manager, int depth) {
+std::pair<Move, int> AIManager::get_move_until_time(const int max_duration_ms) {
     LOG_TRACE;
+    const auto start_time = std::chrono::steady_clock::now();
+    const auto max_duration = std::chrono::milliseconds(max_duration_ms);
     BoardState& bs = board_manager.get_bs();
 
     // decay history heuristic such that between each AI move it has SOME idea of
@@ -72,17 +40,19 @@ Move AIManager::get_move(BoardManager& board_manager, int depth) {
     // get the legal moves from the position
     tracked_array<Move, MAX_NUM_MOVES> moves = get_moves(bs.turn, bs);
     moves = board_manager.get_legal_moves(moves);
-    ASSERT(valid_moves.size() > 0, "Empty Valid Moves called on AImanager::get_move at root");
+    ASSERT(moves.size() > 0, "Empty Valid Moves called on AImanager::get_move at root");
     Move best = moves[0];
 
     // iterative deepening := loop over all depths
-    for (int iterative_depth = 1; iterative_depth <= depth; iterative_depth++) {
+    int depth = 1;
+    auto duration = std::chrono::milliseconds(0);
+    while (duration < max_duration && depth < AI_MAX_DEPTH) {
 
         // fetch the best move found so far for the given position up to the current depth (or empty move)
         // and sort the moves
         TTEntry* tt_entry = tt.at(bs.hash);
         Move tt_best_move = tt_entry ? tt_entry->best_move : Move();
-        order_moves(moves, tt_best_move, iterative_depth, bs);
+        order_moves(moves, tt_best_move, depth, bs);
 
         // iterate over the moves
         int alpha = -INF;
@@ -90,7 +60,7 @@ Move AIManager::get_move(BoardManager& board_manager, int depth) {
 
             // make the move, search the tree, and undo the move
             board_manager.make_move(move);
-            int score = -negamax(board_manager, iterative_depth - 1, -INF, -alpha);
+            int score = -negamax(depth - 1, -INF, -alpha);
             board_manager.undo_move();
 
             // if the move causes an alpha-cutoff -> record it
@@ -98,12 +68,27 @@ Move AIManager::get_move(BoardManager& board_manager, int depth) {
                 alpha = score;
                 best = move;
             }
+
+            duration = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - start_time);
+            if (duration > max_duration) break;
         }
+
+         depth++;
     }
-    return best;
+
+    return {best, depth - 1};
 }
 
-int AIManager::negamax(BoardManager& board_manager, int depth, int alpha, int beta) {
+/**
+ * Performs a negamax search for the best move
+ *
+ * @return the score of the position
+ */
+int AIManager::negamax(
+    int depth,
+    int alpha,
+    int beta
+) {
     LOG_TRACE;
     BoardState& bs = board_manager.get_bs();
 
@@ -155,7 +140,7 @@ int AIManager::negamax(BoardManager& board_manager, int depth, int alpha, int be
 
         // process move and explore subsequent states
         board_manager.make_move(move);
-        int score = -negamax(board_manager, depth - 1, -beta, -alpha);
+        int score = -negamax(depth - 1, -beta, -alpha);
         board_manager.undo_move();
 
         // update the best move if one is found
@@ -188,8 +173,12 @@ int AIManager::negamax(BoardManager& board_manager, int depth, int alpha, int be
     return best_score;
 }
 
-// simple score evaluator based upon how many pieces are on the board
-// and what their associated value is
+/**
+ * Provides a score for the given position. Does not consider the game state (e.g. check, draw, checkmate)
+ * only consider the pieces on the board and their relative positions
+ *
+ * @return score for the position
+ */
 int AIManager::eval_board(const BoardState& bs) const {
     int score = 0;
 
@@ -230,7 +219,7 @@ int AIManager::eval_board(const BoardState& bs) const {
     return ai_colour == Colour::WHITE ? score : -score; // flip so score is from AI's perspective
 }
 
-void AIManager::order_moves(tracked_array<Move, MAX_NUM_MOVES>& moves, const Move& tt_best_move, int depth, const BoardState& bs) {
+void AIManager::order_moves(tracked_array<Move, MAX_NUM_MOVES>& moves, const Move& tt_best_move, int depth, const BoardState& bs) const {
     // compute a score per move
     std::array<int, MAX_NUM_MOVES> scores{};
     for (size_t i = 0; i < moves.size(); i++) {
@@ -241,7 +230,7 @@ void AIManager::order_moves(tracked_array<Move, MAX_NUM_MOVES>& moves, const Mov
 
         }
         if (is_capture(m, bs)) {
-            scores[i] = 100'000 + mvv_lva_score(m, bs);
+            scores[i] = 100'000 + get_mvvlva_score(m, bs);
             continue;
         }
 
@@ -267,29 +256,4 @@ void AIManager::order_moves(tracked_array<Move, MAX_NUM_MOVES>& moves, const Mov
         }
         moves[j+1] = mv; scores[j+1] = sc;
     }
-}
-
-bool AIManager::is_capture(const Move& move, const BoardState& bs) { // maybe move to a util file
-    const Bitboard& enemy_pieces = bs.get_bb(!bs.turn, PieceType::NONE);
-    return is_bit(enemy_pieces, move.to);
-}
-
-int AIManager::mvv_lva_score(const Move& move, const BoardState& bs) { // maybe move to a util file
-
-    int attacker_idx = -1;
-    for (int i = 0; i < NUM_PIECE_TYPES; i++) {
-        const Bitboard& bb = bs.get_bb(bs.turn, static_cast<PieceType>(i));
-        if (is_bit(bb, move.from)) attacker_idx = i;
-    }
-
-    int victim_idx = -1;
-    for (int i = 0; i < NUM_PIECE_TYPES; i++) {
-        const Bitboard& bb = bs.get_bb(!bs.turn, static_cast<PieceType>(i));
-        if (is_bit(bb, move.to)) victim_idx = i;
-    }
-
-    ASSERT(attacker_idx >= 0 && attacker_idx <= NUM_PIECE_TYPES, "Invalid attacker index");
-    ASSERT(victim_idx >= 0 && victim_idx <= NUM_PIECE_TYPES, "Invalid victim index");
-
-    return MVV_LVA_SCORES[attacker_idx][victim_idx];
 }
