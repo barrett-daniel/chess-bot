@@ -15,10 +15,11 @@ class BoardManager {
         tracked_array<Move, MAX_NUM_MOVES> get_legal_moves(const tracked_array<Move, MAX_NUM_MOVES>& moves, bool in_check);
         tracked_array<Move, MAX_NUM_MOVES> get_legal_moves(const tracked_array<Move, MAX_NUM_MOVES>& moves);
 
-        GameState get_game_state(const tracked_array<Move, MAX_NUM_MOVES>& legal_moves, bool in_check);
         GameState get_game_state();
-        bool insufficient_material();
-        bool is_in_check(Colour side);
+        bool is_fifty_move_rule() const;
+        bool is_three_fold_repetition() const;
+        bool is_insufficient_material() const;
+        bool is_in_check(Colour side) const;
 
         BoardState& get_bs();
 

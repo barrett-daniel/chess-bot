@@ -560,11 +560,34 @@ Bitboard BoardManager::get_delta_bb(Square a, Square b) {
 // Game State checkers
 // ----------------------------------------------
 
-GameState BoardManager::get_game_state(const tracked_array<Move, MAX_NUM_MOVES>& legal_moves, bool in_check) {
-    if (bs.half_move_count >= 100) return GameState::DRAW; // 50 move rule
+GameState BoardManager::get_game_state() {
+    if (is_fifty_move_rule()) {
+        return GameState::DRAW;
+    }
 
-    if (legal_moves.empty()) return in_check ? GameState::CHECKMATE : GameState::DRAW; // checkmate or stalemate
+    bool in_check = is_in_check(bs.turn);
+    auto legal_moves = get_legal_moves(get_moves(bs.turn, bs));
 
+    if (legal_moves.empty()) {
+        return in_check ? GameState::CHECKMATE : GameState::DRAW; // checkmate or stalemate
+    }
+
+    if (is_three_fold_repetition() || is_insufficient_material()) [[unlikely]] {
+        return GameState::DRAW;
+    }
+
+    if (in_check) {
+        return GameState::CHECK;
+    }
+
+    return GameState::UNFINISHED;
+}
+
+bool BoardManager::is_fifty_move_rule() const {
+    return bs.half_move_count >= 100;
+}
+
+bool BoardManager::is_three_fold_repetition() const {
     if (bs.half_move_count >= 8) { // 3-fold repetition only possible after 8 half moves since last reset
 
         // slice the history vector about lower and upper bounds for which a 3-fold repetition could occur.
@@ -587,24 +610,15 @@ GameState BoardManager::get_game_state(const tracked_array<Move, MAX_NUM_MOVES>&
         for (int i = lower_bound; i <= upper_bound; i += 2) {
             if (history[i].hash == current_hash) {
                 occurrences++;
-                if (occurrences >= 3) return GameState::DRAW; // 3-fold repetition
+                if (occurrences >= 3) return true; // 3-fold repetition
             }
         }
     }
 
-    if (insufficient_material()) [[unlikely]] return GameState::DRAW;
-
-    if (in_check) return GameState::CHECK;
-
-    return GameState::UNFINISHED;
+    return false;
 }
 
-GameState BoardManager::get_game_state() {
-    bool in_check = is_in_check(bs.turn);
-    return get_game_state(get_legal_moves(get_moves(bs.turn, bs), in_check), in_check);
-}
-
-bool BoardManager::insufficient_material() {
+bool BoardManager::is_insufficient_material() const {
     // NOTE: king + bishop vs. king + bishop is not technically insufficient material
     // however so long as both players possess a few brain cells it is always a draw
     // in practise. So we say it is insufficient material. It's not worth the extra compute
@@ -633,7 +647,7 @@ bool BoardManager::insufficient_material() {
     return false;
 }
 
-bool BoardManager::is_in_check(Colour side) {
+bool BoardManager::is_in_check(Colour side) const {
     LOG_TRACE;
 
     // check for sliding piece checks

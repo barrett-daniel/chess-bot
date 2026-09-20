@@ -272,7 +272,7 @@ TEST_SUITE("Win At Chess") {
         std::string avoid_moves_str;
         for (const Move& move : tc.avoid_moves) avoid_moves_str += move.to_string() + " ";
 
-        std::string log_msg = std::format("\nAi move chosen: {}\nBest moves: {}\nAvoid moves: {}", ai_move.to_string(), best_moves_str, avoid_moves_str);
+        std::string log_msg = std::format("\nAi move chosen: {}\nBest moves: {}\nAvoid moves: {}\n", ai_move.to_string(), best_moves_str, avoid_moves_str);
         MESSAGE(log_msg);
         CHECK(found_best);
         CHECK(avoided_worst);

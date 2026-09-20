@@ -18,11 +18,11 @@ TTEntry* TranspositionTable::at(uint64_t key) {
     return (e.key == key) ? &e : nullptr;
 }
 
-void TranspositionTable::store(uint64_t key, int score, int depth, TTFlag flag) {
+void TranspositionTable::store(uint64_t key, int score, int depth, TTFlag flag, const Move& best_move) {
     TTEntry& e = table[key & mask];
     // depth-preferred replacement: don't overwrite deeper/newer entries with shallow ones
     if (e.key != key || depth >= e.depth) {
-        e = { key, score, depth, flag };
+        e = { key, score, depth, flag, best_move};
     }
 }
 

@@ -13,13 +13,14 @@ struct TTEntry {
     int score;
     int depth;
     TTFlag flag;
+    Move best_move;
 };
 
 class TranspositionTable {
     public:
         TranspositionTable();
         TTEntry* at(uint64_t key);
-        void store(uint64_t key, int score, int depth, TTFlag flag);
+        void store(uint64_t key, int score, int depth, TTFlag flag, const Move& best_move);
         void clear();
     private:
         std::vector<TTEntry> table;

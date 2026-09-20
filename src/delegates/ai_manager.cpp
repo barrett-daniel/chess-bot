@@ -3,9 +3,12 @@
 #include "../utility/logger.hpp"
 
 #include <cstdlib>
+#include <limits>
 #include <ctime>
+#include <math.h>
 #include <unordered_map>
 
+constexpr int INF = 30'000; // just an obsurdly large score value for a chess position which does not result in underflow/overflow
 constexpr int MATE_VALUE = INT_MAX - 1000; // not so close to INT_MAX to prevent overflow
 constexpr Bitboard CENTRE(0x1818000000);
 constexpr Bitboard EXTENDED_CENTRE(0x3c3c3c3c0000);
@@ -23,68 +26,74 @@ constexpr uint16_t QUEEN_VALUE = 900;
 
 constexpr int TT_SIZE_MB = 4;
 
+static int MVV_LVA_SCORES[NUM_PIECE_TYPES][NUM_PIECE_TYPES]; // indexed [attacker][victim]
+
 AIManager::AIManager(Colour ai_colour)
-  : ai_colour(ai_colour)
-{
+    : ai_colour(ai_colour), history_heuristic{} {
     LOG_TRACE;
-    std::srand(std::time(nullptr));
+
+    auto score_piece = [](PieceType pt) {
+        switch (pt) {
+            case PieceType::PAWN: return PAWN_VALUE;
+            case PieceType::KNIGHT: return KNIGHT_VALUE;
+            case PieceType::BISHOP: return BISHOP_VALUE;
+            case PieceType::ROOK: return ROOK_VALUE;
+            case PieceType::QUEEN: return QUEEN_VALUE;
+            case PieceType::KING: return static_cast<uint16_t>(10'000);
+            default: throw std::runtime_error("Unknown PieceType");
+        }
+    };
+
+    // init MVV_LVA_SCORES
+    for (int i = 0; i < NUM_PIECE_TYPES; i++) {
+        for (int j = 0; j < NUM_PIECE_TYPES; j++) {
+            auto attacker = static_cast<PieceType>(i);
+            auto victim = static_cast<PieceType>(j);
+            MVV_LVA_SCORES[i][j] = score_piece(victim) - score_piece(attacker);
+        }
+    }
 }
 
-// OLD GET_MOVE ------------------------------------------------------------
-//
-// Move AIManager::get_move(BoardManager& board_manager, int depth) {
-//     LOG_TRACE;
-//
-//     calls = 0;
-//     BoardState& bs = board_manager.get_bs();
-//     tracked_array<Move, MAX_NUM_MOVES> moves = get_moves(bs.turn, bs);
-//     tracked_array<Move, MAX_NUM_MOVES> valid_moves = board_manager.get_legal_moves(moves);
-//
-//     Move best = valid_moves[0];
-//     int alpha = INT_MIN;
-//     int beta = INT_MAX;
-//
-//     for(Move move : valid_moves) {
-//         board_manager.make_move(move);
-//         int score = min_max(board_manager, depth - 1, false, alpha, beta);
-//         board_manager.undo_move();
-//
-//         if (score > alpha) {
-//             alpha = score;
-//             best = move;
-//         }
-//     }
-//     return best;
-// }
-
+/**
+ * Fetches the AI's determination of the best move given the current board position
+ *
+ * @param board_manager containing the `BoardState` and other logic regarding the game state
+ * @param depth for which to search to
+ * @return the best `Move`
+ */
 Move AIManager::get_move(BoardManager& board_manager, int depth) {
     LOG_TRACE;
-
     BoardState& bs = board_manager.get_bs();
+
+    // decay history heuristic such that between each AI move it has SOME idea of
+    // good moves from before, but it doesn't overpower the model decision-making
+    for (auto& row : history_heuristic) for (auto& v : row) v /= 2;
+
+    // get the legal moves from the position
     tracked_array<Move, MAX_NUM_MOVES> moves = get_moves(bs.turn, bs);
-    tracked_array<Move, MAX_NUM_MOVES> valid_moves = board_manager.get_legal_moves(moves);
-
+    moves = board_manager.get_legal_moves(moves);
     ASSERT(valid_moves.size() > 0, "Empty Valid Moves called on AImanager::get_move at root");
-    Move best = valid_moves[0];
+    Move best = moves[0];
 
+    // iterative deepening := loop over all depths
     for (int iterative_depth = 1; iterative_depth <= depth; iterative_depth++) {
 
-        // make the best move from the last iteration
-        board_manager.make_move(best);
-        int outer_score = -negamax(board_manager, iterative_depth - 1, INT_MIN, INT_MAX);
-        board_manager.undo_move();
+        // fetch the best move found so far for the given position up to the current depth (or empty move)
+        // and sort the moves
+        TTEntry* tt_entry = tt.at(bs.hash);
+        Move tt_best_move = tt_entry ? tt_entry->best_move : Move();
+        order_moves(moves, tt_best_move, iterative_depth, bs);
 
-        // store the alpha value
-        int alpha = outer_score;
-        int beta = INT_MAX;
+        // iterate over the moves
+        int alpha = -INF;
+        for(const Move& move : moves) {
 
-        for(const Move& move : valid_moves) {
-            if (move == best) continue;
-
+            // make the move, search the tree, and undo the move
             board_manager.make_move(move);
-            int score = -negamax(board_manager, iterative_depth - 1, alpha, beta);
+            int score = -negamax(board_manager, iterative_depth - 1, -INF, -alpha);
             board_manager.undo_move();
 
+            // if the move causes an alpha-cutoff -> record it
             if (score > alpha) {
                 alpha = score;
                 best = move;
@@ -98,9 +107,16 @@ int AIManager::negamax(BoardManager& board_manager, int depth, int alpha, int be
     LOG_TRACE;
     BoardState& bs = board_manager.get_bs();
 
-    // tt logic to review already seen positions
+    if (board_manager.is_fifty_move_rule() || board_manager.is_three_fold_repetition() || board_manager.is_insufficient_material()) {
+        return 0;
+    }
+
+    // tt logic to review already seen positions: if we already know the exact score for this position
+    // -> return it, if we have a bounded score entry, then reduce the alpha-beta window as required
     TTEntry* entry = tt.at(bs.hash);
+    Move tt_best_move;
     if (entry) {
+        tt_best_move = entry->best_move;
         if (entry->depth >= depth) {
             switch (entry->flag) {
                 case TTFlag::EXACT: return entry->score;
@@ -108,56 +124,73 @@ int AIManager::negamax(BoardManager& board_manager, int depth, int alpha, int be
                 case TTFlag::UPPERBOUND: beta  = std::min(beta,  entry->score); break;
             }
 
+            // if the window has closed -> return the score
             if (alpha >= beta) return entry->score;
         }
     }
 
+    // if we've reached the end depth -> evaluate the board and return the score
     if(depth == 0) return (bs.turn == ai_colour ? 1 : -1) * eval_board(bs); // exit
 
     // generate moves
     bool in_check = board_manager.is_in_check(bs.turn);
     tracked_array<Move, MAX_NUM_MOVES> moves = get_moves(bs.turn, bs);
-    tracked_array<Move, MAX_NUM_MOVES> valid_moves = board_manager.get_legal_moves(moves, in_check);
+    moves = board_manager.get_legal_moves(moves, in_check);
 
-    // exit with score if game has ended
-    // NOTE: TT entries are checked before this and so TT cable could overlook 3-fold repetition and 50-move rule
-    // as these depend on the board state. Could move this above the TT entry but it would be much slower. Something to
-    // consider later
-    switch (board_manager.get_game_state(valid_moves, in_check)) {
-        case GameState::CHECKMATE: return -(MATE_VALUE + depth);
-        case GameState::DRAW: return 0;
-        default: break;
+    // other end-game rules already checked, now check for checkmate / stalemate
+    if (moves.empty()) {
+        return in_check ? -(MATE_VALUE + depth) : 0;
     }
 
     // order moves
-    // TBD
+    order_moves(moves, tt_best_move, depth, bs);
 
-    // iterate over moves to find search tree
-    int best_score = INT_MIN;
     const int original_alpha = alpha;
     const int original_beta = beta;
+    int best_score = -INF;
+    Move best_move;
 
-    for (const Move& move : valid_moves) {
+    // iterate over moves
+    for (const Move& move : moves) {
+
+        // process move and explore subsequent states
         board_manager.make_move(move);
         int score = -negamax(board_manager, depth - 1, -beta, -alpha);
         board_manager.undo_move();
 
-        best_score = std::max(best_score, score);
+        // update the best move if one is found
+        if (score > best_score) {
+            best_score = score;
+            best_move = move;
+        }
         alpha = std::max(alpha, score);
-        if (alpha >= beta) break;
+
+        // if an alpha-cutoff occurs (i.e. alpha-beta window has closed so this move would never be allowed
+        // to be played under optimal play by the opposite side)
+        if (alpha >= beta) {
+            // when 'quiet move' (non-capture) causes a beta-cutoff -> record it for move ordering
+            if (!is_capture(move, bs)) {
+                history_heuristic[move.from][move.to] += depth * depth;
+                if (move != killers[depth][0]) {
+                    killers[depth][1] = killers[depth][0];
+                    killers[depth][0] = move;
+                }
+            }
+            break;
+        }
     }
 
-    TTFlag flag = (best_score <= original_alpha) ? TTFlag::UPPERBOUND
-                   : (best_score >= original_beta) ? TTFlag::LOWERBOUND
+    TTFlag tt_flag = (best_score <= original_alpha) ? TTFlag::UPPERBOUND
+                   : (best_score >= original_beta)  ? TTFlag::LOWERBOUND
                    : TTFlag::EXACT;
 
-    tt.store(bs.hash, best_score, depth, flag);
+    tt.store(bs.hash, best_score, depth, tt_flag, best_move);
     return best_score;
 }
 
 // simple score evaluator based upon how many pieces are on the board
 // and what their associated value is
-int AIManager::eval_board(const BoardState& bs) {
+int AIManager::eval_board(const BoardState& bs) const {
     int score = 0;
 
     const Bitboard& white_pawns = bs.get_bb(Colour::WHITE, PieceType::PAWN);
@@ -195,4 +228,68 @@ int AIManager::eval_board(const BoardState& bs) {
     score += (std::popcount(white_king & KING_SAFETY) - std::popcount(black_king & KING_SAFETY)) * KING_SAFETY_VAL;
 
     return ai_colour == Colour::WHITE ? score : -score; // flip so score is from AI's perspective
+}
+
+void AIManager::order_moves(tracked_array<Move, MAX_NUM_MOVES>& moves, const Move& tt_best_move, int depth, const BoardState& bs) {
+    // compute a score per move
+    std::array<int, MAX_NUM_MOVES> scores{};
+    for (size_t i = 0; i < moves.size(); i++) {
+        const Move& m = moves[i];
+        if (m == tt_best_move) {
+            scores[i] = 1'000'000;
+            continue;
+
+        }
+        if (is_capture(m, bs)) {
+            scores[i] = 100'000 + mvv_lva_score(m, bs);
+            continue;
+        }
+
+        if (m == killers[depth][0]) {
+            scores[i] = 90'000;
+            continue;
+        }
+
+        if (m == killers[depth][1]) {
+            scores[i] = 80'000;
+            continue;
+        }
+
+        scores[i] = history_heuristic[m.from][m.to];
+    }
+
+    // sort moves by score, descending (simple insertion sort is fine for ~30-40 moves)
+    for (size_t i = 1; i < moves.size(); i++) {
+        Move mv = moves[i]; int sc = scores[i];
+        int j = i - 1;
+        while (j >= 0 && scores[j] < sc) {
+            moves[j+1] = moves[j]; scores[j+1] = scores[j]; j--;
+        }
+        moves[j+1] = mv; scores[j+1] = sc;
+    }
+}
+
+bool AIManager::is_capture(const Move& move, const BoardState& bs) { // maybe move to a util file
+    const Bitboard& enemy_pieces = bs.get_bb(!bs.turn, PieceType::NONE);
+    return is_bit(enemy_pieces, move.to);
+}
+
+int AIManager::mvv_lva_score(const Move& move, const BoardState& bs) { // maybe move to a util file
+
+    int attacker_idx = -1;
+    for (int i = 0; i < NUM_PIECE_TYPES; i++) {
+        const Bitboard& bb = bs.get_bb(bs.turn, static_cast<PieceType>(i));
+        if (is_bit(bb, move.from)) attacker_idx = i;
+    }
+
+    int victim_idx = -1;
+    for (int i = 0; i < NUM_PIECE_TYPES; i++) {
+        const Bitboard& bb = bs.get_bb(!bs.turn, static_cast<PieceType>(i));
+        if (is_bit(bb, move.to)) victim_idx = i;
+    }
+
+    ASSERT(attacker_idx >= 0 && attacker_idx <= NUM_PIECE_TYPES, "Invalid attacker index");
+    ASSERT(victim_idx >= 0 && victim_idx <= NUM_PIECE_TYPES, "Invalid victim index");
+
+    return MVV_LVA_SCORES[attacker_idx][victim_idx];
 }
