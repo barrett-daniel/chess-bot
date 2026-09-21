@@ -67,9 +67,9 @@ int main(int argc, char* argv[]) {
     const Colour player = Colour::WHITE;
     SDL_Renderer* SDL_renderer = SDL_CreateRenderer(window, NULL); 
     Renderer renderer(SDL_renderer, player);
-    BoardManager board_manager(START_FEN);
+    BoardManager board_manager("4k1r1/2p3r1/1pR1p3/3pP2p/3P2qP/P4N2/1PQ4P/5R1K b - -");
     InputManager input_manager(player, board_manager);
-    AIManager ai_manager(!player, board_manager);
+    AIManager ai_manager(!player, board_manager, AI_SEARCH_TIME_MS);
 
     const int frame_delay = 1000 / FPS;
     uint32_t frame_start;
@@ -90,7 +90,7 @@ int main(int argc, char* argv[]) {
         LOGGER_ON;
 
         if(board_manager.get_bs().turn == !player) {
-            auto [move, _] = ai_manager.get_move_until_time(AI_SEARCH_TIME_MS);
+            Move move = ai_manager.get_move();
             board_manager.make_move(move);
         }
 

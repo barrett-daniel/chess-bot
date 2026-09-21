@@ -18,20 +18,19 @@ constexpr int KING_SAFETY_VAL = 30;
 
 constexpr int TT_SIZE_MB = 4;
 
-AIManager::AIManager(Colour ai_colour, BoardManager& board_manager)
-    : board_manager(board_manager), ai_colour(ai_colour), history_heuristic{} {}
+AIManager::AIManager(Colour ai_colour, BoardManager& board_manager, int search_limit_ms)
+    : board_manager(board_manager), ai_colour(ai_colour), history_heuristic{}, search_limit(search_limit_ms) {}
 
 /**
  * Fetches the AI's determination of the best move given the current board position
- *
- * @param max_duration how long the AI is permitted to search for in milliseconds
- * @return the best `Move`
  */
-std::pair<Move, int> AIManager::get_move_until_time(const int max_duration_ms) {
+Move AIManager::get_move(SearchData* search_data) {
     LOG_TRACE;
-    const auto start_time = std::chrono::steady_clock::now();
-    const auto max_duration = std::chrono::milliseconds(max_duration_ms);
     BoardState& bs = board_manager.get_bs();
+
+    // init time control vars
+    search_start = std::chrono::steady_clock::now();
+    search_aborted = false;
 
     // decay history heuristic such that between each AI move it has SOME idea of
     // good moves from before, but it doesn't overpower the model decision-making
@@ -40,13 +39,13 @@ std::pair<Move, int> AIManager::get_move_until_time(const int max_duration_ms) {
     // get the legal moves from the position
     tracked_array<Move, MAX_NUM_MOVES> moves = get_moves(bs.turn, bs);
     moves = board_manager.get_legal_moves(moves);
-    ASSERT(moves.size() > 0, "Empty Valid Moves called on AImanager::get_move at root");
+    ASSERT(!moves.empty(), "Empty Valid Moves called on AImanager::get_move at root");
     Move best = moves[0];
 
     // iterative deepening := loop over all depths
+    uint64_t num_visited_nodes = 0;
     int depth = 1;
-    auto duration = std::chrono::milliseconds(0);
-    while (duration < max_duration && depth < AI_MAX_DEPTH) {
+    while (depth < AI_MAX_DEPTH) {
 
         // fetch the best move found so far for the given position up to the current depth (or empty move)
         // and sort the moves
@@ -60,8 +59,10 @@ std::pair<Move, int> AIManager::get_move_until_time(const int max_duration_ms) {
 
             // make the move, search the tree, and undo the move
             board_manager.make_move(move);
-            int score = -negamax(depth - 1, -INF, -alpha);
+            int score = -negamax(depth - 1, -INF, -alpha, num_visited_nodes);
             board_manager.undo_move();
+
+            if (search_aborted) goto exit_label;
 
             // if the move causes an alpha-cutoff -> record it
             if (score > alpha) {
@@ -69,14 +70,18 @@ std::pair<Move, int> AIManager::get_move_until_time(const int max_duration_ms) {
                 best = move;
             }
 
-            duration = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - start_time);
-            if (duration > max_duration) break;
+            if (std::chrono::steady_clock::now() - search_start > search_limit) goto exit_label;
         }
-
-         depth++;
+        depth++;
     }
+    exit_label:;
 
-    return {best, depth - 1};
+    if (search_data) {
+        search_data->depth = depth - 1;
+        search_data->nodes = num_visited_nodes;
+        search_data->elapsed_time = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - search_start);
+    }
+    return best;
 }
 
 /**
@@ -87,14 +92,23 @@ std::pair<Move, int> AIManager::get_move_until_time(const int max_duration_ms) {
 int AIManager::negamax(
     int depth,
     int alpha,
-    int beta
+    int beta,
+    uint64_t& num_visited_nodes
 ) {
     LOG_TRACE;
-    BoardState& bs = board_manager.get_bs();
+
+    if ((++num_visited_nodes & 0x7FF) == 0) { // check every 2048 nodes
+        if (std::chrono::steady_clock::now() - search_start > search_limit) {
+            search_aborted = true;
+        }
+    }
+    if (search_aborted) return 0; // value ignored by caller, just unwind fast
 
     if (board_manager.is_fifty_move_rule() || board_manager.is_three_fold_repetition() || board_manager.is_insufficient_material()) {
         return 0;
     }
+
+    BoardState& bs = board_manager.get_bs();
 
     // tt logic to review already seen positions: if we already know the exact score for this position
     // -> return it, if we have a bounded score entry, then reduce the alpha-beta window as required
@@ -140,8 +154,10 @@ int AIManager::negamax(
 
         // process move and explore subsequent states
         board_manager.make_move(move);
-        int score = -negamax(depth - 1, -beta, -alpha);
+        int score = -negamax(depth - 1, -beta, -alpha, num_visited_nodes);
         board_manager.undo_move();
+
+        if (search_aborted) return 0;   // bail out with no TT write, no score usage
 
         // update the best move if one is found
         if (score > best_score) {

@@ -255,8 +255,8 @@ TEST_SUITE("Win At Chess") {
     void run_ai_test_case(int index) {
         TestCaseData tc = parse_epd_line(read_line(index));
 
-        AIManager ai(tc.bm.get_bs().turn, tc.bm);
-        auto [ai_move, _] = ai.get_move_until_time(AI_SEARCH_TIME_MS);
+        AIManager ai(tc.bm.get_bs().turn, tc.bm, AI_SEARCH_TIME_MS);
+        Move ai_move = ai.get_move();
 
         bool found_best = false;
         for (const Move& move : tc.best_moves)

@@ -19,6 +19,7 @@
 #else
     const int FPS = 5;
     constexpr int AI_MAX_DEPTH = 25;
+    constexpr int AI_SEARCH_TIME_MS = 10000;
     #define ASSERT(expr, msg) \
         if (!(expr)) { \
             std::cerr << "*****" << std::endl << \

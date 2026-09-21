@@ -188,8 +188,9 @@ void BoardManager::make_move(const Move& move) {
 
         // making a double push
         if(abs(move.from - move.to) == 2 * BOARD_SIZE) {
-            h ^= ZEP_FILE[bs.en_passant_square & (BOARD_SIZE - 1)]; // update enpassant file hash
-            bs.en_passant_square = move.from + forward;
+            Square new_ep_sq = move.from + forward;
+            h ^= ZEP_FILE[new_ep_sq & (BOARD_SIZE - 1)]; // update enpassant file hash
+            bs.en_passant_square = new_ep_sq;
         }
 
         // promotion
