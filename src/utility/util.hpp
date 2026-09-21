@@ -301,6 +301,49 @@ class BoardState {
         inline Bitboard get_bb(Colour side, PieceType type) const {
             return bbs[static_cast<uint8_t>(side) * 7 + static_cast<uint8_t>(type)];
         }
+
+        std::string to_string() const {
+            // [white][black] piece characters, indexed by PieceType value (0-5)
+            static constexpr std::array<std::array<char, 6>, 2> piece_chars = {{
+                {'P', 'N', 'B', 'R', 'Q', 'K'},  // white
+                {'p', 'n', 'b', 'r', 'q', 'k'}   // black
+            }};
+
+            std::string out;
+            out.reserve(8 * 8 * 2 + 8 * 4 + 20);
+
+            out += "  a b c d e f g h\n";
+            for (int rank = 7; rank >= 0; --rank) {
+                out += std::to_string(rank + 1);
+                out += ' ';
+
+                for (int file = 0; file < 8; ++file) {
+                    int sq = rank * 8 + file;
+                    Bitboard mask = static_cast<Bitboard>(1) << sq;
+                    char piece_char = '.';
+
+                    for (int colour = 0; colour < 2 && piece_char == '.'; ++colour) {
+                        for (int pt = 0; pt < 6; ++pt) {
+                            Bitboard bb = get_bb(static_cast<Colour>(colour), static_cast<PieceType>(pt));
+                            if (bb & mask) {
+                                piece_char = piece_chars[colour][pt];
+                                break;
+                            }
+                        }
+                    }
+
+                    out += piece_char;
+                    out += ' ';
+                }
+
+                out += ' ';
+                out += std::to_string(rank + 1);
+                out += '\n';
+            }
+            out += "  a b c d e f g h\n";
+
+            return out;
+        }
 };
 
 std::string to_string_piece_colour(PieceType piece, Colour side);

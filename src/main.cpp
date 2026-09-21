@@ -64,10 +64,10 @@ int main(int argc, char* argv[]) {
 
     init_static_data();
 
-    const Colour player = Colour::WHITE;
+    const Colour player = Colour::BLACK;
     SDL_Renderer* SDL_renderer = SDL_CreateRenderer(window, NULL); 
     Renderer renderer(SDL_renderer, player);
-    BoardManager board_manager("4k1r1/2p3r1/1pR1p3/3pP2p/3P2qP/P4N2/1PQ4P/5R1K b - -");
+    BoardManager board_manager("2rr3k/pp3pp1/1nnqbN1p/3pN3/2pP4/2P3Q1/PPB4P/R4RK1 w - -");
     InputManager input_manager(player, board_manager);
     AIManager ai_manager(!player, board_manager, AI_SEARCH_TIME_MS);
 

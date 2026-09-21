@@ -6,8 +6,8 @@
 #include "mvvlva.hpp"
 #include "../../utility/logger.hpp"
 
-constexpr int INF = 30'000; // just an obsurdly large score value for a chess position which does not result in underflow/overflow
-constexpr int MATE_VALUE = INT_MAX - 1000; // not so close to INT_MAX to prevent overflow
+constexpr int INF = 1'000'000;
+constexpr int MATE_VALUE = INF - 1'000;
 constexpr Bitboard CENTRE(0x1818000000);
 constexpr Bitboard EXTENDED_CENTRE(0x3c3c3c3c0000);
 constexpr Bitboard KING_SAFETY(0xe7000000000000e7);
@@ -41,6 +41,7 @@ Move AIManager::get_move(SearchData* search_data) {
     moves = board_manager.get_legal_moves(moves);
     ASSERT(!moves.empty(), "Empty Valid Moves called on AImanager::get_move at root");
     Move best = moves[0];
+    int completed_depth = 0;
 
     // iterative deepening := loop over all depths
     uint64_t num_visited_nodes = 0;
@@ -55,6 +56,9 @@ Move AIManager::get_move(SearchData* search_data) {
 
         // iterate over the moves
         int alpha = -INF;
+        Move iteration_best = moves[0];
+        bool iteration_complete = true;
+
         for(const Move& move : moves) {
 
             // make the move, search the tree, and undo the move
@@ -62,22 +66,35 @@ Move AIManager::get_move(SearchData* search_data) {
             int score = -negamax(depth - 1, -INF, -alpha, num_visited_nodes);
             board_manager.undo_move();
 
-            if (search_aborted) goto exit_label;
+            if (search_aborted) {
+                iteration_complete = false;
+                break;
+            }
 
             // if the move causes an alpha-cutoff -> record it
             if (score > alpha) {
                 alpha = score;
-                best = move;
+                iteration_best = move;
             }
 
-            if (std::chrono::steady_clock::now() - search_start > search_limit) goto exit_label;
+            if (std::chrono::steady_clock::now() - search_start > search_limit) {
+                iteration_complete = false;
+                break;
+            }
         }
+
+        if (iteration_complete) {
+            best = iteration_best;
+            completed_depth = depth;
+        }
+
+        if (search_aborted || !iteration_complete) break;
+
         depth++;
     }
-    exit_label:;
 
     if (search_data) {
-        search_data->depth = depth - 1;
+        search_data->depth = completed_depth;
         search_data->nodes = num_visited_nodes;
         search_data->elapsed_time = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - search_start);
     }
@@ -138,6 +155,7 @@ int AIManager::negamax(
 
     // other end-game rules already checked, now check for checkmate / stalemate
     if (moves.empty()) {
+        // std::cout << bs.to_string() << std::endl;
         return in_check ? -(MATE_VALUE + depth) : 0;
     }
 
