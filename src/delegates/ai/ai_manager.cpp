@@ -146,7 +146,7 @@ int AIManager::negamax(
     }
 
     // if we've reached the end depth -> evaluate the board and return the score
-    if(depth == 0) return (bs.turn == ai_colour ? 1 : -1) * eval_board(bs); // exit
+    if(depth == 0) return (bs.turn == Colour::WHITE ? 1 : -1) * eval_board(bs); // exit
 
     // generate moves
     bool in_check = board_manager.is_in_check(bs.turn);
@@ -213,7 +213,7 @@ int AIManager::negamax(
  *
  * @return score for the position
  */
-int AIManager::eval_board(const BoardState& bs) const {
+int AIManager::eval_board(const BoardState& bs) {
     int score = 0;
 
     const Bitboard& white_pawns = bs.get_bb(Colour::WHITE, PieceType::PAWN);
@@ -233,12 +233,12 @@ int AIManager::eval_board(const BoardState& bs) const {
     score += std::popcount(bs.get_bb(Colour::BLACK, PieceType::BISHOP)) * -BISHOP_VALUE;
 
     // rooks
-    score += std::popcount(bs.get_bb(Colour::WHITE, PieceType::ROOK)) * BISHOP_VALUE;
-    score += std::popcount(bs.get_bb(Colour::BLACK, PieceType::ROOK)) * -BISHOP_VALUE;
+    score += std::popcount(bs.get_bb(Colour::WHITE, PieceType::ROOK)) * ROOK_VALUE;
+    score += std::popcount(bs.get_bb(Colour::BLACK, PieceType::ROOK)) * -ROOK_VALUE;
 
     // queens
-    score += std::popcount(bs.get_bb(Colour::WHITE, PieceType::QUEEN)) * BISHOP_VALUE;
-    score += std::popcount(bs.get_bb(Colour::BLACK, PieceType::QUEEN)) * -BISHOP_VALUE;
+    score += std::popcount(bs.get_bb(Colour::WHITE, PieceType::QUEEN)) * QUEEN_VALUE;
+    score += std::popcount(bs.get_bb(Colour::BLACK, PieceType::QUEEN)) * -QUEEN_VALUE;
 
     // Positional pieces
     // pawns
@@ -250,7 +250,7 @@ int AIManager::eval_board(const BoardState& bs) const {
     const Bitboard& black_king = bs.get_bb(Colour::BLACK, PieceType::KING);
     score += (std::popcount(white_king & KING_SAFETY) - std::popcount(black_king & KING_SAFETY)) * KING_SAFETY_VAL;
 
-    return ai_colour == Colour::WHITE ? score : -score; // flip so score is from AI's perspective
+    return score;
 }
 
 void AIManager::order_moves(tracked_array<Move, MAX_NUM_MOVES>& moves, const Move& tt_best_move, int depth, const BoardState& bs) const {

@@ -256,7 +256,8 @@ TEST_SUITE("Win At Chess") {
         TestCaseData tc = parse_epd_line(read_line(index));
 
         AIManager ai(tc.bm.get_bs().turn, tc.bm, AI_SEARCH_TIME_MS);
-        Move ai_move = ai.get_move();
+        SearchData search_data;
+        Move ai_move = ai.get_move(&search_data);
 
         bool found_best = false;
         for (const Move& move : tc.best_moves)
@@ -273,7 +274,13 @@ TEST_SUITE("Win At Chess") {
         std::string avoid_moves_str;
         for (const Move& move : tc.avoid_moves) avoid_moves_str += move.to_string() + " ";
 
-        std::string log_msg = std::format("\nAi move chosen: {}\nBest moves: {}\nAvoid moves: {}\n", ai_move.to_string(), best_moves_str, avoid_moves_str);
+        std::string log_msg = std::format(
+            "\nAi move chosen: {}\nBest moves: {}\nAvoid moves: {}\nAI searched to a depth: {}\n",
+            ai_move.to_string(),
+            best_moves_str,
+            avoid_moves_str,
+            search_data.depth
+        );
         MESSAGE(log_msg);
         CHECK(found_best);
         CHECK(avoided_worst);

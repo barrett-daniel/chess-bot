@@ -35,7 +35,7 @@ class AIManager {
 
         // private functions
         int negamax(int depth, int alpha, int beta, uint64_t& num_visited_nodes);
-        int eval_board(const BoardState &bs) const;
+        static int eval_board(const BoardState &bs) ;
         void order_moves(tracked_array<Move, MAX_NUM_MOVES>& moves, const Move& tt_best_move, int depth, const BoardState& bs) const;
 
 };
