@@ -1,8 +1,8 @@
 #include <doctest/doctest.h>
 
 #include "test_util.hpp"
-#include "delegates/board_manager.hpp"
-#include "utility/start_up.hpp"
+#include "board_data/board_manager.hpp"
+#include "util/init_static_data.hpp"
 
 void run_test_case(const std::string& fen, const std::vector<Move> moves) {
     init_static_data();

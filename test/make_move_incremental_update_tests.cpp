@@ -3,9 +3,9 @@
 #include <doctest/doctest.h>
 
 #include "test_util.hpp"
-#include "delegates/board_manager.hpp"
-#include "delegates/ai/eval_board.hpp"
-#include "utility/start_up.hpp"
+#include "board_data/board_manager.hpp"
+#include "ai/eval_board.hpp"
+#include "util/init_static_data.hpp"
 
 constexpr int TEST_NUM_ITERATIONS = 30;
 constexpr int TEST_NUM_MOVES = 30;
@@ -72,7 +72,7 @@ void run_test_case(const std::string& fen, bool testing_eval, bool testing_hash)
                 }
             }
 
-            if (is_game_over(bm.get_game_state())) break;
+            if (bm.is_game_over()) break;
         }
     }
 }

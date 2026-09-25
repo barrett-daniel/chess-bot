@@ -4,8 +4,8 @@
 #include <numeric>
 
 #include "test_util.hpp"
-#include "delegates/ai/ai_manager.hpp"
-#include "utility/start_up.hpp"
+#include "ai/ai_manager.hpp"
+#include "util/init_static_data.hpp"
 
 /**
  *  There is no pass/fail for this test case. Its purpose is to write to the speed_test_results.csv
@@ -31,7 +31,7 @@ TEST_SUITE("Speed Tests") {
         double avg_depth = 0;
         int min_depth = std::numeric_limits<int>::max();
         int max_depth = 0;
-        uint64_t total_nodes = 0;
+        u64 total_nodes = 0;
         double nodes_per_second = 0;
         long long average_microseconds_per_move = 0;
     };
@@ -44,7 +44,7 @@ TEST_SUITE("Speed Tests") {
     PositionStats run_position(const std::string& fen) {
         init_static_data();
 
-        uint64_t total_nodes = 0;
+        u64 total_nodes = 0;
         std::chrono::microseconds total_time{0};
         long long depth_sum = 0;
         int min_depth = std::numeric_limits<int>::max();
@@ -74,7 +74,7 @@ TEST_SUITE("Speed Tests") {
                     max_depth = std::max(max_depth, search_data.depth);
                     total_plies++;
 
-                    if (is_game_over(bm.get_game_state())) goto next_run;
+                    if (bm.is_game_over()) goto next_run;
                 }
             }
             next_run:;

@@ -3,9 +3,9 @@
 #include <doctest/doctest.h>
 
 #include "test_util.hpp"
-#include "delegates/ai/ai_manager.hpp"
-#include "delegates/board_manager.hpp"
-#include "utility/start_up.hpp"
+#include "ai/ai_manager.hpp"
+#include "board_data/board_manager.hpp"
+#include "util/init_static_data.hpp"
 
 /**
  * Based upon the "Win At Chess" book by Fred Reinfeld (1958), this test suite runs 300 chess positions

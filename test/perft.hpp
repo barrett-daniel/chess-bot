@@ -1,7 +1,7 @@
 #pragma once
 #include <doctest/doctest.h>
 
-#include "delegates/board_manager.hpp"
+#include "board_data/board_manager.hpp"
 
 /**
  * Performs a PERFT test (as defined here: https://chessprogramming.org/Perft) counting the
@@ -9,7 +9,7 @@
  *
  * i.e. counts the total number of possible positions from the given position and depth.
  */
-inline uint64_t perft(BoardManager& bm, int depth) {
+inline u64 perft(BoardManager& bm, int depth) {
     tracked_array<Move, MAX_NUM_MOVES> moves = get_moves(bm.get_bs().turn, bm.get_bs());
     tracked_array<Move, MAX_NUM_MOVES> legal_moves = bm.get_legal_moves(moves);
 
@@ -17,7 +17,7 @@ inline uint64_t perft(BoardManager& bm, int depth) {
         return legal_moves.size();
     }
 
-    uint64_t nodes = 0;
+    u64 nodes = 0;
     for (const Move& move : legal_moves) {
         bm.make_move(move);
         nodes += perft(bm, depth - 1);
@@ -34,10 +34,10 @@ inline void divide(BoardManager& bm, int depth) {
     tracked_array<Move, MAX_NUM_MOVES> moves = get_moves(bm.get_bs().turn, bm.get_bs());
     tracked_array<Move, MAX_NUM_MOVES> legal_moves = bm.get_legal_moves(moves);
 
-    uint64_t total = 0;
+    u64 total = 0;
     for (const Move& move : legal_moves) {
         bm.make_move(move);
-        uint64_t num = (depth == 1) ? 1 : perft(bm, depth - 1);
+        u64 num = (depth == 1) ? 1 : perft(bm, depth - 1);
         bm.undo_move();
 
         MESSAGE(move.to_string() << ": " << num);

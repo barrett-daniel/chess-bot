@@ -1,10 +1,8 @@
 #pragma once
 #include <random>
 
-#include "delegates/move_generator.hpp"
-#include "utility/zobrist_hashing.hpp"
-
-#include "utility/util.hpp"
+#include "move_generation/move_generator.hpp"
+#include "board_data/zobrist_hashing.hpp"
 
 constexpr const char* POSITION_ONE = START_FEN;
 constexpr const char* POSITION_TWO = "r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPPP/R3K2R w KQkq - ";
@@ -13,7 +11,7 @@ constexpr const char* POSITION_FOUR = "r3k2r/Pppp1ppp/1b3nbN/nP6/BBP1P3/q4N2/Pp1
 constexpr const char* POSITION_FIVE = "rnbq1k1r/pp1Pbppp/2p5/8/2B5/8/PPP1NnPP/RNBQK2R w KQ - 1 8  ";
 constexpr const char* POSITION_SIX = "r4rk1/1pp1qppp/p1np1n2/2b1p1B1/2B1P1b1/P1NP1N2/1PP1QPPP/R4RK1 w - - 0 10 ";
 
-inline uint64_t rand_u64() {
+inline u64 rand_u64() {
     static std::mt19937_64 rng(12345);
     return rng();
 }

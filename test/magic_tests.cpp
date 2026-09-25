@@ -8,8 +8,7 @@
 #include <doctest/doctest.h>
 
 #include "test_util.hpp"
-#include "pieces/magic_bitboard.hpp"
-#include "utility/util.hpp"
+#include "move_generation/pieces/magic_bitboard.hpp"
 
 TEST_SUITE("Magic Tests") {
     TEST_CASE("Rook Magic") {

@@ -2,8 +2,8 @@
 
 #include "perft.hpp"
 #include "test_util.hpp"
-#include "delegates/board_manager.hpp"
-#include "utility/start_up.hpp"
+#include "board_data/board_manager.hpp"
+#include "util/init_static_data.hpp"
 
 // https://chessprogramming.org/Perft
 
@@ -15,14 +15,14 @@ TEST_SUITE("PERFT Tests") {
      * @param expected the list of correct numbers of nodes in the PERF-tree at various depths
      * @param depth the depth at which to perform this PERFT test
      */
-    void perft_test(const std::string& fen, const std::vector<uint64_t> &expected, int depth) {
+    void perft_test(const std::string& fen, const std::vector<u64> &expected, int depth) {
         REQUIRE_GE(depth, 1);
         REQUIRE_LE(depth, expected.size());
 
         SUBCASE(std::to_string(depth)) {
             init_static_data();
             BoardManager bm = BoardManager(fen);
-            uint64_t nodes = perft(bm, depth);
+            u64 nodes = perft(bm, depth);
             CHECK_EQ(nodes, expected[depth - 1]);
         }
     }
@@ -44,37 +44,37 @@ TEST_SUITE("PERFT Tests") {
     //
 
     TEST_CASE("Position 1") {
-        static const std::vector<uint64_t> expected = {20, 400, 8902, 197281, 4865609, 119060324, 3195901860, 84998978956, 2439530234167};
+        static const std::vector<u64> expected = {20, 400, 8902, 197281, 4865609, 119060324, 3195901860, 84998978956, 2439530234167};
         int depth = GENERATE(1,2,3,4,5);
         perft_test(POSITION_ONE, expected, depth);
     }
 
     TEST_CASE("Position 2") {
-        static const std::vector<uint64_t> expected = {48, 2039, 97862, 4085603, 193690690, 8031647685};
+        static const std::vector<u64> expected = {48, 2039, 97862, 4085603, 193690690, 8031647685};
         int depth = GENERATE(1,2,3,4,5);
         perft_test(POSITION_TWO, expected, depth);
     }
 
     TEST_CASE("Position 3") {
-        static const std::vector<uint64_t> expected = {14, 191, 2812, 43238, 674624, 11030083};
+        static const std::vector<u64> expected = {14, 191, 2812, 43238, 674624, 11030083};
         int depth = GENERATE(1,2,3,4,5);
         perft_test(POSITION_THREE, expected, depth);
     }
 
     TEST_CASE("Position 4") {
-        static const std::vector<uint64_t> expected = {6, 264, 9467, 422333, 15833292, 706045033};
+        static const std::vector<u64> expected = {6, 264, 9467, 422333, 15833292, 706045033};
         int depth = GENERATE(1,2,3,4,5);
         perft_test(POSITION_FOUR, expected, depth);
     }
 
     TEST_CASE("Position 5") {
-        static const std::vector<uint64_t> expected = {44, 1486, 62379, 2103487, 89941194};
+        static const std::vector<u64> expected = {44, 1486, 62379, 2103487, 89941194};
         int depth = GENERATE(1,2,3,4,5);
         perft_test(POSITION_FIVE, expected, depth);
     }
 
     TEST_CASE("Position 6") {
-        static const std::vector<uint64_t> expected = {46, 2079, 89890, 3894594, 164075551, 6923051137, 287188994746, 11923589843526, 490154852788714};
+        static const std::vector<u64> expected = {46, 2079, 89890, 3894594, 164075551, 6923051137, 287188994746, 11923589843526, 490154852788714};
         int depth = GENERATE(1,2,3,4,5);
         perft_test(POSITION_SIX, expected, depth);
     }

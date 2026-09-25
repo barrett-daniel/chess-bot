@@ -44,15 +44,14 @@ https://grandchesstree.com/tools
 #include <SDL3/SDL.h>
 #include <chrono>
 
-#include "pieces/pawn.hpp"
-#include "delegates/board_manager.hpp"
-#include "delegates/renderer.hpp"
-#include "delegates/input_manager.hpp"
-#include "delegates/move_generator.hpp"
-#include "delegates/ai/ai_manager.hpp"
-#include "utility/zobrist_hashing.hpp"
-#include "utility/logger.hpp"
-#include "utility/start_up.hpp"
+#include "board_data/board_manager.hpp"
+#include "ui/renderer.hpp"
+#include "ui/input_manager.hpp"
+#include "move_generation/move_generator.hpp"
+#include "ai/ai_manager.hpp"
+#include "board_data/zobrist_hashing.hpp"
+#include "util/logger/logger.hpp"
+#include "util/init_static_data.hpp"
 
 int main(int argc, char* argv[]) {
     LOGGER_ON;
@@ -73,7 +72,7 @@ int main(int argc, char* argv[]) {
     AIManager ai_manager(!player, board_manager, AI_SEARCH_TIME_MS);
 
     const int frame_delay = 1000 / FPS;
-    uint32_t frame_start;
+    u32 frame_start;
     int frame_time;
 
     while(input_manager.is_running()) {
@@ -81,10 +80,9 @@ int main(int argc, char* argv[]) {
         Colour turn = board_manager.get_bs().turn;
 
         LOGGER_OFF;
-        GameState state = board_manager.get_game_state();
-        if (is_game_over(state)) {
+        if (board_manager.is_game_over()) {
             LOGGER_ON;
-            LOG("Game Over! State: " + std::to_string(static_cast<uint8_t>(state)));
+            LOG("Game Over! State: " + std::to_string(std::to_underlying(board_manager.get_game_state())));
             input_manager.quit();
             break;
         }
