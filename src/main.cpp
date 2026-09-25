@@ -21,16 +21,17 @@ MOVE OPTAMISATION:
 -
 
 AI OPTAMISATION:
-- Move ordering / sorting moves
 - Opening Book moves
 - Endgame move book/optimisation
 - Quiescence search
-- Iterative deepening
-- Transposition table
-- Piece-square tables
 - Null-move pruning
 - Incremental evaluation
 - Mobility
+
+1. Incremental board evaluation
+2. Selective Search Pruning
+3. Optimise bottlenecks (believe calculating pinned squares is one
+4. piece_at array in board_state
 
 https://chessprogramming.org/Encoding_Moves#fn2
 https://chessprogramming.org/Perft
@@ -64,10 +65,10 @@ int main(int argc, char* argv[]) {
 
     init_static_data();
 
-    const Colour player = Colour::BLACK;
+    const Colour player = Colour::WHITE;
     SDL_Renderer* SDL_renderer = SDL_CreateRenderer(window, NULL); 
     Renderer renderer(SDL_renderer, player);
-    BoardManager board_manager("2rr3k/pp3pp1/1nnqbN1p/3pN3/2pP4/2P3Q1/PPB4P/R4RK1 w - -");
+    BoardManager board_manager(START_FEN);
     InputManager input_manager(player, board_manager);
     AIManager ai_manager(!player, board_manager, AI_SEARCH_TIME_MS);
 

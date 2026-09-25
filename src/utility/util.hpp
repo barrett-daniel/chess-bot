@@ -8,6 +8,8 @@
 #include <bitset>
 #include <cstdint>
 #include <cstring>
+#include <format>
+#include <utility>
 #include <vector>
 #include <boost/container/static_vector.hpp>
 
@@ -19,7 +21,7 @@
 #else
     const int FPS = 5;
     constexpr int AI_MAX_DEPTH = 25;
-    constexpr int AI_SEARCH_TIME_MS = 10000;
+    constexpr int AI_SEARCH_TIME_MS = 2000;
     #define ASSERT(expr, msg) \
         if (!(expr)) { \
             std::cerr << "*****" << std::endl << \
@@ -190,6 +192,10 @@ constexpr uint8_t NUM_COLOURS = 2;
 enum class Colour : uint8_t {
     WHITE, BLACK
 };
+constexpr int colour_sign[NUM_COLOURS] = {
+    1, // white
+    -1 // black
+};
 
 inline Colour operator!(Colour c) {
     return c == Colour::WHITE ? Colour::BLACK : Colour::WHITE;
@@ -199,6 +205,13 @@ constexpr uint8_t NUM_PIECE_TYPES = 6; // note: 7 == NONE
 enum class PieceType : uint8_t {
     PAWN, KNIGHT, BISHOP, ROOK, QUEEN, KING, NONE
 };
+constexpr uint8_t PT_PAWN_IDX = std::to_underlying(PieceType::PAWN);
+constexpr uint8_t PT_KNIGHT_IDX = std::to_underlying(PieceType::KNIGHT);
+constexpr uint8_t PT_BISHOP_IDX = std::to_underlying(PieceType::BISHOP);
+constexpr uint8_t PT_ROOK_IDX = std::to_underlying(PieceType::ROOK);
+constexpr uint8_t PT_QUEEN_IDX = std::to_underlying(PieceType::QUEEN);
+constexpr uint8_t PT_KING_IDX = std::to_underlying(PieceType::KING);
+constexpr uint8_t PT_NONE_IDX = std::to_underlying(PieceType::NONE);
 
 constexpr uint8_t NUM_GAME_STATES = 4;
 enum class GameState : uint8_t {
@@ -271,6 +284,373 @@ class Move {
         }
 };
 
+constexpr int PAWN_VALUE   = 100;
+constexpr int KNIGHT_VALUE = 300;
+constexpr int BISHOP_VALUE = 310;
+constexpr int ROOK_VALUE   = 500;
+constexpr int QUEEN_VALUE  = 900;
+constexpr int KING_VALUE   = 0;
+
+constexpr int32_t piece_value[NUM_PIECE_TYPES] = {
+    PAWN_VALUE,
+    KNIGHT_VALUE,
+    BISHOP_VALUE,
+    ROOK_VALUE,
+    QUEEN_VALUE,
+    KING_VALUE
+};
+
+constexpr int PAWN_PHASE   = 0;
+constexpr int KNIGHT_PHASE = 1;
+constexpr int BISHOP_PHASE = 1;
+constexpr int ROOK_PHASE   = 2;
+constexpr int QUEEN_PHASE  = 4;
+constexpr int KING_PHASE   = 0;
+
+constexpr uint8_t phase_value[NUM_PIECE_TYPES] = {
+    PAWN_PHASE,
+    KNIGHT_PHASE,
+    BISHOP_PHASE,
+    ROOK_PHASE,
+    QUEEN_PHASE,
+    KING_PHASE
+};
+
+/*************************************************
+
+                Piece Square Tables
+
+*************************************************/
+
+constexpr int psqt_mg[NUM_COLOURS][NUM_PIECE_TYPES][NUM_SQUARES] = {
+    {
+        {
+            0,  0,  0,  0,  0,  0,  0,  0,
+            50, 50, 50, 50, 50, 50, 50, 50,
+            10, 10, 20, 30, 30, 20, 10, 10,
+            5,  5, 10, 25, 25, 10,  5,  5,
+            0,  0,  0, 20, 20,  0,  0,  0,
+            5, -5,-10,  0,  0,-10, -5,  5,
+            5, 10, 10,-20,-20, 10, 10,  5,
+            0,  0,  0,  0,  0,  0,  0,  0
+        },
+        {
+            -50,-40,-30,-30,-30,-30,-40,-50,
+            -40,-20,  0,  0,  0,  0,-20,-40,
+            -30,  0, 10, 15, 15, 10,  0,-30,
+            -30,  5, 15, 20, 20, 15,  5,-30,
+            -30,  0, 15, 20, 20, 15,  0,-30,
+            -30,  5, 10, 15, 15, 10,  5,-30,
+            -40,-20,  0,  5,  5,  0,-20,-40,
+            -50,-40,-30,-30,-30,-30,-40,-50
+        },
+        {
+            -20,-10,-10,-10,-10,-10,-10,-20,
+            -10,  5,  0,  0,  0,  0,  5,-10,
+            -10, 10, 10, 10, 10, 10, 10,-10,
+            -10,  0, 10, 10, 10, 10,  0,-10,
+            -10,  5,  5, 10, 10,  5,  5,-10,
+            -10,  0,  5, 10, 10,  5,  0,-10,
+            -10,  0,  0,  0,  0,  0,  0,-10,
+            -20,-10,-10,-10,-10,-10,-10,-20
+        },
+        {
+            0,  0,  0,  0,  0,  0,  0,  0,
+            5, 10, 10, 10, 10, 10, 10,  5,
+            -5,  0,  0,  0,  0,  0,  0, -5,
+            -5,  0,  0,  0,  0,  0,  0, -5,
+            -5,  0,  0,  0,  0,  0,  0, -5,
+            -5,  0,  0,  0,  0,  0,  0, -5,
+            -5,  0,  0,  0,  0,  0,  0, -5,
+            0,  0,  0,  5,  5,  0,  0,  0
+        },
+        {
+            -20,-10,-10, -5, -5,-10,-10,-20,
+            -10,  0,  0,  0,  0,  0,  0,-10,
+            -10,  0,  5,  5,  5,  5,  0,-10,
+            -5,  0,  5,  5,  5,  5,  0, -5,
+            0,  0,  5,  5,  5,  5,  0, -5,
+            -10,  5,  5,  5,  5,  5,  0,-10,
+            -10,  0,  5,  0,  0,  0,  0,-10,
+            -20,-10,-10, -5, -5,-10,-10,-20
+        },
+        {
+            20, 30, 10,  0,  0, 10, 30, 20,
+            20, 20,  0,  0,  0,  0, 20, 20,
+            -10,-20,-20,-20,-20,-20,-20,-10,
+            -20,-30,-30,-40,-40,-30,-30,-20,
+            -30,-40,-40,-50,-50,-40,-40,-30,
+            -30,-40,-40,-50,-50,-40,-40,-30,
+            -30,-40,-40,-50,-50,-40,-40,-30,
+            -30,-40,-40,-50,-50,-40,-40,-30
+        }
+    },
+    {
+        {
+            0,  0,  0,  0,  0,  0,  0,  0,
+            5, 10, 10,-20,-20, 10, 10,  5,
+            5, -5,-10,  0,  0,-10, -5,  5,
+            0,  0,  0, 20, 20,  0,  0,  0,
+            5,  5, 10, 25, 25, 10,  5,  5,
+            10, 10, 20, 30, 30, 20, 10, 10,
+            50, 50, 50, 50, 50, 50, 50, 50,
+            0,  0,  0,  0,  0,  0,  0,  0
+        },
+        {
+            -50,-40,-30,-30,-30,-30,-40,-50,
+            -40,-20,  0,  5,  5,  0,-20,-40,
+            -30,  5, 10, 15, 15, 10,  5,-30,
+            -30,  0, 15, 20, 20, 15,  0,-30,
+            -30,  5, 15, 20, 20, 15,  5,-30,
+            -30,  0, 10, 15, 15, 10,  0,-30,
+            -40,-20,  0,  0,  0,  0,-20,-40,
+            -50,-40,-30,-30,-30,-30,-40,-50
+        },
+        {
+            -20,-10,-10,-10,-10,-10,-10,-20,
+            -10,  0,  0,  0,  0,  0,  0,-10,
+            -10,  0,  5, 10, 10,  5,  0,-10,
+            -10,  5,  5, 10, 10,  5,  5,-10,
+            -10,  0, 10, 10, 10, 10,  0,-10,
+            -10, 10, 10, 10, 10, 10, 10,-10,
+            -10,  5,  0,  0,  0,  0,  5,-10,
+            -20,-10,-10,-10,-10,-10,-10,-20
+        },
+        {
+            0,  0,  0,  5,  5,  0,  0,  0,
+            -5,  0,  0,  0,  0,  0,  0, -5,
+            -5,  0,  0,  0,  0,  0,  0, -5,
+            -5,  0,  0,  0,  0,  0,  0, -5,
+            -5,  0,  0,  0,  0,  0,  0, -5,
+            -5,  0,  0,  0,  0,  0,  0, -5,
+            5, 10, 10, 10, 10, 10, 10,  5,
+            0,  0,  0,  0,  0,  0,  0,  0
+        },
+        {
+            -20,-10,-10, -5, -5,-10,-10,-20,
+            -10,  0,  5,  0,  0,  0,  0,-10,
+            -10,  5,  5,  5,  5,  5,  0,-10,
+            0,  0,  5,  5,  5,  5,  0, -5,
+            -5,  0,  5,  5,  5,  5,  0, -5,
+            -10,  0,  5,  5,  5,  5,  0,-10,
+            -10,  0,  0,  0,  0,  0,  0,-10,
+            -20,-10,-10, -5, -5,-10,-10,-20
+        },
+        {
+            -30,-40,-40,-50,-50,-40,-40,-30,
+            -30,-40,-40,-50,-50,-40,-40,-30,
+            -30,-40,-40,-50,-50,-40,-40,-30,
+            -30,-40,-40,-50,-50,-40,-40,-30,
+            -20,-30,-30,-40,-40,-30,-30,-20,
+            -10,-20,-20,-20,-20,-20,-20,-10,
+            20, 20,  0,  0,  0,  0, 20, 20,
+            20, 30, 10,  0,  0, 10, 30, 20
+        }
+    }
+};
+
+constexpr int psqt_eg[NUM_COLOURS][NUM_PIECE_TYPES][NUM_SQUARES] = {
+    {
+        {
+            0,  0,  0,  0,  0,  0,  0,  0,
+            50, 50, 50, 50, 50, 50, 50, 50,
+            10, 10, 20, 30, 30, 20, 10, 10,
+            5,  5, 10, 25, 25, 10,  5,  5,
+            0,  0,  0, 20, 20,  0,  0,  0,
+            5, -5,-10,  0,  0,-10, -5,  5,
+            5, 10, 10,-20,-20, 10, 10,  5,
+            0,  0,  0,  0,  0,  0,  0,  0
+        },
+        {
+            -50,-40,-30,-30,-30,-30,-40,-50,
+            -40,-20,  0,  0,  0,  0,-20,-40,
+            -30,  0, 10, 15, 15, 10,  0,-30,
+            -30,  5, 15, 20, 20, 15,  5,-30,
+            -30,  0, 15, 20, 20, 15,  0,-30,
+            -30,  5, 10, 15, 15, 10,  5,-30,
+            -40,-20,  0,  5,  5,  0,-20,-40,
+            -50,-40,-30,-30,-30,-30,-40,-50
+        },
+        {
+            -20,-10,-10,-10,-10,-10,-10,-20,
+            -10,  5,  0,  0,  0,  0,  5,-10,
+            -10, 10, 10, 10, 10, 10, 10,-10,
+            -10,  0, 10, 10, 10, 10,  0,-10,
+            -10,  5,  5, 10, 10,  5,  5,-10,
+            -10,  0,  5, 10, 10,  5,  0,-10,
+            -10,  0,  0,  0,  0,  0,  0,-10,
+            -20,-10,-10,-10,-10,-10,-10,-20
+        },
+        {
+            0,  0,  0,  0,  0,  0,  0,  0,
+            5, 10, 10, 10, 10, 10, 10,  5,
+            -5,  0,  0,  0,  0,  0,  0, -5,
+            -5,  0,  0,  0,  0,  0,  0, -5,
+            -5,  0,  0,  0,  0,  0,  0, -5,
+            -5,  0,  0,  0,  0,  0,  0, -5,
+            -5,  0,  0,  0,  0,  0,  0, -5,
+            0,  0,  0,  5,  5,  0,  0,  0
+        },
+        {
+            -20,-10,-10, -5, -5,-10,-10,-20,
+            -10,  0,  0,  0,  0,  0,  0,-10,
+            -10,  0,  5,  5,  5,  5,  0,-10,
+            -5,  0,  5,  5,  5,  5,  0, -5,
+            0,  0,  5,  5,  5,  5,  0, -5,
+            -10,  5,  5,  5,  5,  5,  0,-10,
+            -10,  0,  5,  0,  0,  0,  0,-10,
+            -20,-10,-10, -5, -5,-10,-10,-20
+        },
+        {
+            -50,-40,-30,-20,-20,-30,-40,-50,
+            -30,-20,-10,  0,  0,-10,-20,-30,
+            -30,-10, 20, 30, 30, 20,-10,-30,
+            -30,-10, 30, 40, 40, 30,-10,-30,
+            -30,-10, 30, 40, 40, 30,-10,-30,
+            -30,-10, 20, 30, 30, 20,-10,-30,
+            -30,-30,  0,  0,  0,  0,-30,-30,
+            -50,-30,-30,-30,-30,-30,-30,-50
+        }
+    },
+    {
+        {
+            0,  0,  0,  0,  0,  0,  0,  0,
+            5, 10, 10,-20,-20, 10, 10,  5,
+            5, -5,-10,  0,  0,-10, -5,  5,
+            0,  0,  0, 20, 20,  0,  0,  0,
+            5,  5, 10, 25, 25, 10,  5,  5,
+            10, 10, 20, 30, 30, 20, 10, 10,
+            50, 50, 50, 50, 50, 50, 50, 50,
+            0,  0,  0,  0,  0,  0,  0,  0
+        },
+        {
+            -50,-40,-30,-30,-30,-30,-40,-50,
+            -40,-20,  0,  5,  5,  0,-20,-40,
+            -30,  5, 10, 15, 15, 10,  5,-30,
+            -30,  0, 15, 20, 20, 15,  0,-30,
+            -30,  5, 15, 20, 20, 15,  5,-30,
+            -30,  0, 10, 15, 15, 10,  0,-30,
+            -40,-20,  0,  0,  0,  0,-20,-40,
+            -50,-40,-30,-30,-30,-30,-40,-50
+        },
+        {
+            -20,-10,-10,-10,-10,-10,-10,-20,
+            -10,  0,  0,  0,  0,  0,  0,-10,
+            -10,  0,  5, 10, 10,  5,  0,-10,
+            -10,  5,  5, 10, 10,  5,  5,-10,
+            -10,  0, 10, 10, 10, 10,  0,-10,
+            -10, 10, 10, 10, 10, 10, 10,-10,
+            -10,  5,  0,  0,  0,  0,  5,-10,
+            -20,-10,-10,-10,-10,-10,-10,-20
+        },
+        {
+            0,  0,  0,  5,  5,  0,  0,  0,
+            -5,  0,  0,  0,  0,  0,  0, -5,
+            -5,  0,  0,  0,  0,  0,  0, -5,
+            -5,  0,  0,  0,  0,  0,  0, -5,
+            -5,  0,  0,  0,  0,  0,  0, -5,
+            -5,  0,  0,  0,  0,  0,  0, -5,
+            5, 10, 10, 10, 10, 10, 10,  5,
+            0,  0,  0,  0,  0,  0,  0,  0
+        },
+        {
+            -20,-10,-10, -5, -5,-10,-10,-20,
+            -10,  0,  5,  0,  0,  0,  0,-10,
+            -10,  5,  5,  5,  5,  5,  0,-10,
+            0,  0,  5,  5,  5,  5,  0, -5,
+            -5,  0,  5,  5,  5,  5,  0, -5,
+            -10,  0,  5,  5,  5,  5,  0,-10,
+            -10,  0,  0,  0,  0,  0,  0,-10,
+            -20,-10,-10, -5, -5,-10,-10,-20
+        },
+        {
+            -30,-30,  0,  0,  0,  0,-30,-30,
+            -30,-10, 20, 30, 30, 20,-10,-30,
+            -30,-10, 30, 40, 40, 30,-10,-30,
+            -30,-10, 30, 40, 40, 30,-10,-30,
+            -30,-10, 20, 30, 30, 20,-10,-30,
+            -30,-20,-10,  0,  0,-10,-20,-30,
+            -50,-40,-30,-20,-20,-30,-40,-50,
+            -50,-30,-30,-30,-30,-30,-30,-50
+        }
+    }
+};
+
+// max possible material on the board is known, converted to phase values https://lichess.org/study/AW5mab1c
+constexpr uint8_t MAX_PHASE   = (18 * QUEEN_PHASE) + (2 * ROOK_PHASE) * (2 * KING_PHASE);
+constexpr uint8_t START_PHASE = 24;
+struct EvaluationData {
+    int32_t score_mg;
+    int32_t score_eg;
+    uint8_t phase;
+
+    /**
+     *
+     * @return the interpolated score between middle and endgame scores based on the phase (heuristic for amount of material on board)
+     */
+    [[nodiscard]] int32_t get_score() const {
+        ASSERT(phase < MAX_PHASE, "Phase exceeds maximum possible phase value");
+        uint8_t clamped_phase = std::min(phase, START_PHASE);
+        return (score_mg * clamped_phase + score_eg * (START_PHASE - clamped_phase)) / START_PHASE;
+    }
+
+    bool operator ==(const EvaluationData&) const = default;
+
+    std::string to_string() const {
+        return std::format("(score_mg = {}, score_eg = {}, phase = {})", score_mg, score_eg, phase);
+    }
+
+    void remove_piece_score(uint8_t piece_type, uint8_t colour, Square sq) {
+        const int sign = colour_sign[colour];
+
+        score_mg -= piece_value[piece_type] * sign;
+        score_eg -= piece_value[piece_type] * sign;
+        score_mg -= psqt_mg[colour][piece_type][sq] * sign;
+        score_eg -= psqt_eg[colour][piece_type][sq] * sign;
+        phase -= phase_value[piece_type];
+    }
+
+    void remove_piece_score(PieceType piece_type, Colour colour, Square sq) {
+        remove_piece_score(std::to_underlying(piece_type), std::to_underlying(colour), sq);
+    }
+
+    void add_piece_score(uint8_t piece_type, uint8_t colour, Square sq) {
+        const int sign = colour_sign[colour];
+
+        score_mg += piece_value[piece_type] * sign;
+        score_eg += piece_value[piece_type] * sign;
+        score_mg += psqt_mg[colour][piece_type][sq] * sign;
+        score_eg += psqt_eg[colour][piece_type][sq] * sign;
+        phase += phase_value[piece_type];
+    }
+
+    void add_piece_score(PieceType piece_type, Colour colour, Square sq) {
+        add_piece_score(std::to_underlying(piece_type), std::to_underlying(colour), sq);
+    }
+
+    void process_move(uint8_t piece_type, uint8_t colour, Square move_from, Square move_to) {
+        const int sign = colour_sign[colour];
+
+        score_mg -= psqt_mg[colour][piece_type][move_from] * sign;
+        score_mg += psqt_mg[colour][piece_type][move_to]   * sign;
+        score_eg -= psqt_eg[colour][piece_type][move_from] * sign;
+        score_eg += psqt_eg[colour][piece_type][move_to]   * sign;
+    }
+
+    void process_move(PieceType piece_type, Colour colour, Square move_from, Square move_to) {
+        process_move(std::to_underlying(piece_type), std::to_underlying(colour), move_from, move_to);
+    }
+};
+
+inline std::ostream& operator<<(std::ostream& os, const EvaluationData& ed) {
+    os << "EvaluationData{"
+       << "score_mg=" << ed.score_mg
+       << ", score_eg=" << ed.score_eg
+       << ", phase=" << static_cast<int>(ed.phase)  // uint8_t would print as a char otherwise
+       << "}";
+    return os;
+}
+
 constexpr int NUM_PIECE_BBS = 12;
 class BoardState {
     public:
@@ -290,7 +670,9 @@ class BoardState {
 
         uint16_t full_move_count;
         uint8_t half_move_count; // half move logic for 50-move draw rule is not yet implemented
+
         uint64_t hash;
+        EvaluationData edata;
 
         BoardState() : bbs({}), all_pieces(0), turn(Colour::WHITE), castling_rights(0), en_passant_square(NULL_SQ), full_move_count(0), half_move_count(0), hash(0) {}
 
@@ -343,6 +725,95 @@ class BoardState {
             out += "  a b c d e f g h\n";
 
             return out;
+        }
+
+        std::string to_fen() const {
+            std::string fen;
+            fen.reserve(80);
+
+            // --- 1. Piece placement ---
+            for (int rank = 7; rank >= 0; --rank) {
+                int empty_count = 0;
+                for (int file = 0; file < 8; ++file) {
+                    int sq = rank * 8 + file;
+                    Bitboard mask = static_cast<Bitboard>(1) << sq;
+                    char piece_char = '\0';
+
+                    for (int colour = 0; colour < 2 && piece_char == '\0'; ++colour) {
+                        for (int pt = 0; pt < 6; ++pt) {
+                            Bitboard bb = get_bb(static_cast<Colour>(colour), static_cast<PieceType>(pt));
+                            if (bb & mask) {
+                                static constexpr std::array<std::array<char, 6>, 2> piece_chars = {{
+                                    {'P', 'N', 'B', 'R', 'Q', 'K'},  // white
+                                    {'p', 'n', 'b', 'r', 'q', 'k'}   // black
+                                }};
+                                piece_char = piece_chars[colour][pt];
+                                break;
+                            }
+                        }
+                    }
+
+                    if (piece_char == '\0') {
+                        ++empty_count;
+                    } else {
+                        if (empty_count > 0) {
+                            fen += std::to_string(empty_count);
+                            empty_count = 0;
+                        }
+                        fen += piece_char;
+                    }
+                }
+                if (empty_count > 0) {
+                    fen += std::to_string(empty_count);
+                }
+                if (rank > 0) {
+                    fen += '/';
+                }
+            }
+
+            // --- 2. Active colour ---
+            fen += ' ';
+            fen += (turn == Colour::WHITE) ? 'w' : 'b';
+
+            // --- 3. Castling rights ---
+            // ASSUMPTION: bit0 = white kingside (K), bit1 = white queenside (Q),
+            // bit2 = black kingside (k), bit3 = black queenside (q).
+            // Adjust the mask/order below if your actual bit layout differs.
+            fen += ' ';
+            std::string castling;
+            if (castling_rights & W_KING_CASTLE_MASK)  castling += 'K';
+            if (castling_rights & W_QUEEN_CASTLE_MASK) castling += 'Q';
+            if (castling_rights & B_KING_CASTLE_MASK)  castling += 'k';
+            if (castling_rights & B_QUEEN_CASTLE_MASK) castling += 'q';
+            fen += castling.empty() ? "-" : castling;
+
+            // --- 4. En passant target square ---
+            // ASSUMPTION: Square is an integer-like type where value == rank*8 + file
+            // (matching the indexing used in to_string()/get_bb loops above),
+            // and NULL_SQ is the sentinel for "no en passant square".
+            fen += ' ';
+            if (en_passant_square == NULL_SQ) {
+                fen += '-';
+            } else {
+                int sq = static_cast<int>(en_passant_square);
+                int file = sq % 8;
+                int rank = sq / 8;
+                fen += static_cast<char>('a' + file);
+                fen += static_cast<char>('1' + rank);
+            }
+
+            // --- 5. Halfmove clock ---
+            fen += ' ';
+            fen += std::to_string(static_cast<int>(half_move_count));
+
+            // --- 6. Fullmove number ---
+            // ASSUMPTION: full_move_count already follows FEN convention (starts at 1
+            // for the first move). If your engine starts it at 0 internally, you may
+            // want `std::to_string(full_move_count + 1)` instead.
+            fen += ' ';
+            fen += std::to_string(full_move_count);
+
+            return fen;
         }
 };
 

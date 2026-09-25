@@ -26,7 +26,7 @@ void int_mvvlva_scores() {
             case PieceType::BISHOP: return BISHOP_VALUE;
             case PieceType::ROOK: return ROOK_VALUE;
             case PieceType::QUEEN: return QUEEN_VALUE;
-            case PieceType::KING: return static_cast<uint16_t>(10'000);
+            case PieceType::KING: return 10'000;
             default: throw std::runtime_error("Unknown PieceType");
         }
     };

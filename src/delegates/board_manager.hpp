@@ -33,10 +33,7 @@ class BoardManager {
 
         void process_q_castle(Colour side);
         void process_k_castle(Colour side);
-        void process_castle(
-            Square rook_from, Square rook_to,
-            Square king_from, Square king_to, Colour side
-        );
+        void process_castle(Square rook_from, Square rook_to, Colour side);
 
         bool valid_q_castle(Square move_from, Colour side, bool in_check);
         bool valid_k_castle(Square move_from, Colour side, bool in_check);

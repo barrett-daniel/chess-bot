@@ -5,17 +5,10 @@
 
 #include "mvvlva.hpp"
 #include "../../utility/logger.hpp"
+#include "eval_board.hpp"
 
 constexpr int INF = 1'000'000;
 constexpr int MATE_VALUE = INF - 1'000;
-constexpr Bitboard CENTRE(0x1818000000);
-constexpr Bitboard EXTENDED_CENTRE(0x3c3c3c3c0000);
-constexpr Bitboard KING_SAFETY(0xe7000000000000e7);
-
-constexpr int CENTRE_PAWN_VAL = 25;
-constexpr int EXTENDED_CENTRE_PAWN_VAL = 15;
-constexpr int KING_SAFETY_VAL = 30;
-
 constexpr int TT_SIZE_MB = 4;
 
 AIManager::AIManager(Colour ai_colour, BoardManager& board_manager, int search_limit_ms)
@@ -146,7 +139,7 @@ int AIManager::negamax(
     }
 
     // if we've reached the end depth -> evaluate the board and return the score
-    if(depth == 0) return (bs.turn == Colour::WHITE ? 1 : -1) * eval_board(bs); // exit
+    if(depth == 0) return (bs.turn == Colour::WHITE ? 1 : -1) * bs.edata.get_score(); // exit
 
     // generate moves
     bool in_check = board_manager.is_in_check(bs.turn);
@@ -205,52 +198,6 @@ int AIManager::negamax(
 
     tt.store(bs.hash, best_score, depth, tt_flag, best_move);
     return best_score;
-}
-
-/**
- * Provides a score for the given position. Does not consider the game state (e.g. check, draw, checkmate)
- * only consider the pieces on the board and their relative positions
- *
- * @return score for the position
- */
-int AIManager::eval_board(const BoardState& bs) {
-    int score = 0;
-
-    const Bitboard& white_pawns = bs.get_bb(Colour::WHITE, PieceType::PAWN);
-    const Bitboard& black_pawns = bs.get_bb(Colour::BLACK, PieceType::PAWN);
-
-    // count pieces
-    // pawns
-    score += std::popcount(white_pawns) * PAWN_VALUE;
-    score += std::popcount(black_pawns) * -PAWN_VALUE;
-
-    // knights
-    score += std::popcount(bs.get_bb(Colour::WHITE, PieceType::KNIGHT)) * KNIGHT_VALUE;
-    score += std::popcount(bs.get_bb(Colour::BLACK, PieceType::KNIGHT)) * -KNIGHT_VALUE;
-
-    // bishops
-    score += std::popcount(bs.get_bb(Colour::WHITE, PieceType::BISHOP)) * BISHOP_VALUE;
-    score += std::popcount(bs.get_bb(Colour::BLACK, PieceType::BISHOP)) * -BISHOP_VALUE;
-
-    // rooks
-    score += std::popcount(bs.get_bb(Colour::WHITE, PieceType::ROOK)) * ROOK_VALUE;
-    score += std::popcount(bs.get_bb(Colour::BLACK, PieceType::ROOK)) * -ROOK_VALUE;
-
-    // queens
-    score += std::popcount(bs.get_bb(Colour::WHITE, PieceType::QUEEN)) * QUEEN_VALUE;
-    score += std::popcount(bs.get_bb(Colour::BLACK, PieceType::QUEEN)) * -QUEEN_VALUE;
-
-    // Positional pieces
-    // pawns
-    score += (std::popcount(white_pawns & CENTRE) - std::popcount(black_pawns & CENTRE)) * CENTRE_PAWN_VAL;
-    score += (std::popcount(white_pawns & EXTENDED_CENTRE) - std::popcount(black_pawns & EXTENDED_CENTRE)) * EXTENDED_CENTRE_PAWN_VAL;
-
-    // king safety
-    const Bitboard& white_king = bs.get_bb(Colour::WHITE, PieceType::KING);
-    const Bitboard& black_king = bs.get_bb(Colour::BLACK, PieceType::KING);
-    score += (std::popcount(white_king & KING_SAFETY) - std::popcount(black_king & KING_SAFETY)) * KING_SAFETY_VAL;
-
-    return score;
 }
 
 void AIManager::order_moves(tracked_array<Move, MAX_NUM_MOVES>& moves, const Move& tt_best_move, int depth, const BoardState& bs) const {

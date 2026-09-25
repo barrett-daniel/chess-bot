@@ -7,13 +7,9 @@
 #include <random>
 #include <doctest/doctest.h>
 
+#include "test_util.hpp"
 #include "pieces/magic_bitboard.hpp"
 #include "utility/util.hpp"
-
-uint64_t rand_u64() {
-    static std::mt19937_64 rng(12345);
-    return rng();
-}
 
 TEST_SUITE("Magic Tests") {
     TEST_CASE("Rook Magic") {

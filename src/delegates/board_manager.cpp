@@ -1,11 +1,13 @@
 #include "board_manager.hpp"
 
+#include <format>
 #include <sstream>
 #include <utility>
 
 #include "../utility/zobrist_hashing.hpp"
 #include "../utility/logger.hpp"
 #include "../pieces/pieces.hpp"
+#include "ai/eval_board.hpp"
 
 // ----------------------------------------------
 // Constructor
@@ -106,6 +108,7 @@ BoardManager::BoardManager(const std::string& fen) {
 
     bs.pinned_sqs = calc_pinned_sqs();
     bs.hash = zhash(bs);
+    bs.edata = eval_board(bs);
 }
 
 // ----------------------------------------------
@@ -126,6 +129,9 @@ void BoardManager::make_move(const Move& move) {
     // So to update the hash we: take the existing hash, XOR it with the prior hash key used
     // based on the prior board state element, update the board state, XOR the hash with the hash key
     // for the new board state element.
+    //
+    // A similar approach is used to incrementally update the evaluation score of the board
+    //
 
     // some aliases
     Colour side = bs.turn;
@@ -147,7 +153,11 @@ void BoardManager::make_move(const Move& move) {
         for (uint8_t pt = 0; pt < NUM_PIECE_TYPES; ++pt) {
             Bitboard& bb = bs.get_bb(static_cast<Colour>(c), static_cast<PieceType>(pt));
 
+            // capture
             if (is_bit(bb, move.to)) {
+                // update the phase and evalu score of the board
+                bs.edata.remove_piece_score(pt, c, move.to);
+
                 // update hash and clear bit of captured piece
                 h ^= ZPIECE_SQ[c][pt][move.to];
                 clear_bit(bb, move.to);
@@ -165,6 +175,7 @@ void BoardManager::make_move(const Move& move) {
     // update the bitboard for the moved piece
     h ^= ZPIECE_SQ[static_cast<uint8_t>(side)][static_cast<uint8_t>(move.moved_piece)][move.from];
     h ^= ZPIECE_SQ[static_cast<uint8_t>(side)][static_cast<uint8_t>(move.moved_piece)][move.to];
+    bs.edata.process_move(move.moved_piece, side, move.from, move.to);
     Bitboard& bb = bs.get_bb(side, move.moved_piece);
     clear_bit(bb, move.from);
     set_bit(bb, move.to);
@@ -181,8 +192,12 @@ void BoardManager::make_move(const Move& move) {
             Bitboard& enemy_pawns = bs.get_bb(!side, PieceType::PAWN);
             Square captured_sq = move.to - forward;
 
+            // update phase and score data
+            bs.edata.remove_piece_score(PieceType::PAWN, !side, captured_sq);
+
             // update hash and clear the bit of the taken pawn
-            h ^= ZPIECE_SQ[static_cast<uint8_t>(!side)][static_cast<uint8_t>(PieceType::PAWN)][captured_sq];
+            const auto opp_uside = std::to_underlying(!side);
+            h ^= ZPIECE_SQ[opp_uside][PT_PAWN_IDX][captured_sq];
             clear_bit(enemy_pawns, captured_sq);
         }
 
@@ -195,13 +210,19 @@ void BoardManager::make_move(const Move& move) {
 
         // promotion
         if(move.promotion_piece != PieceType::NONE) {
+            const auto uside = std::to_underlying(side);
+
+            // update phase and score data
+            bs.edata.remove_piece_score(PieceType::PAWN, side, move.to);
+            bs.edata.add_piece_score(move.promotion_piece, side, move.to);
+
             // above we set the bit for move.to but we need to remove it again as pawn promotions
             // are an edge case and obviously are promoted to piece
-            h ^= ZPIECE_SQ[static_cast<uint8_t>(side)][static_cast<uint8_t>(PieceType::PAWN)][move.to];
+            h ^= ZPIECE_SQ[uside][PT_PAWN_IDX][move.to];
             clear_bit(bb, move.to);
 
             // set the bit for the promoted piece
-            h ^= ZPIECE_SQ[static_cast<uint8_t>(side)][static_cast<uint8_t>(move.promotion_piece)][move.to];
+            h ^= ZPIECE_SQ[uside][std::to_underlying(move.promotion_piece)][move.to];
             Bitboard& prom_bb = bs.get_bb(side, move.promotion_piece);
             set_bit(prom_bb, move.to);
         }
@@ -222,6 +243,7 @@ void BoardManager::make_move(const Move& move) {
 
     bs.pinned_sqs = calc_pinned_sqs();
 
+    ASSERT(bs.edata == eval_board(bs), std::format("Non-matching incremental and static board evaluation scores. Actual: {} Expected: {}", bs.edata.to_string(), eval_board(bs).to_string()));
     ASSERT(bs.hash == zhash(bs), "Non-matching incremental hash and static hash calculations");
     LOG("Alternating turn, turn is now: " + to_string_colour(bs.turn));
 }
@@ -292,56 +314,52 @@ void inline BoardManager::update_poly_bbs() {
 
 void BoardManager::process_q_castle(Colour side) {
     LOG_TRACE;
-    Square rook_from, rook_to, king_from, king_to;
+    Square rook_from, rook_to;
     if(side == Colour::WHITE) {
         rook_from = W_QUEEN_ROOK_START_POS;
         rook_to   = W_QUEEN_ROOK_CASTLE_TO;
-        king_from = W_KING_START_POS;
-        king_to   = W_QUEEN_CASTLE_TO;
     } else {
         rook_from = B_QUEEN_ROOK_START_POS;
         rook_to   = B_QUEEN_ROOK_CASTLE_TO;
-        king_from = B_KING_START_POS;
-        king_to   = B_QUEEN_CASTLE_TO;
     }
-    process_castle(rook_from, rook_to, king_from, king_to, side);
+    process_castle(rook_from, rook_to, side);
 }
 
 void BoardManager::process_k_castle(Colour side) {
     LOG_TRACE;
-    Square rook_from, rook_to, king_from, king_to;
+    Square rook_from, rook_to;
     if(side == Colour::WHITE) {
         rook_from = W_KING_ROOK_START_POS;
         rook_to   = W_KING_ROOK_CASTLE_TO;
-        king_from = W_KING_START_POS;
-        king_to   = W_KING_CASTLE_TO;
     } else {
         rook_from = B_KING_ROOK_START_POS;
         rook_to   = B_KING_ROOK_CASTLE_TO;
-        king_from = B_KING_START_POS;
-        king_to   = B_KING_CASTLE_TO;
     }
-    process_castle(rook_from, rook_to, king_from, king_to, side);
+    process_castle(rook_from, rook_to, side);
 }
 
-void BoardManager::process_castle(
-    Square rook_from, Square rook_to,
-    Square king_from, Square king_to, Colour side
+void BoardManager::process_castle(Square rook_from, Square rook_to, Colour side
 ) {
     LOG_TRACE;
-    Bitboard& king_bb = bs.get_bb(side, PieceType::KING);
+
+    // note: the king update logic: moving, hashing and updating evaluation data,
+    // is already accounted for under the normal move semantics
+
     Bitboard& rook_bb = bs.get_bb(side, PieceType::ROOK);
 
     clear_bit(rook_bb, rook_from);
     set_bit(rook_bb, rook_to);
-    clear_bit(king_bb, king_from);
-    set_bit(king_bb, king_to);
 
-    // update hashes for rook position
-    int c = static_cast<uint8_t>(side);
-    int rook_pt = static_cast<uint8_t>(PieceType::ROOK);
-    bs.hash ^= ZPIECE_SQ[c][rook_pt][rook_from];
-    bs.hash ^= ZPIECE_SQ[c][rook_pt][rook_to];
+    const auto uside = std::to_underlying(side);
+    bs.hash ^= ZPIECE_SQ[uside][PT_ROOK_IDX][rook_from];
+    bs.hash ^= ZPIECE_SQ[uside][PT_ROOK_IDX][rook_to];
+
+    bs.edata.process_move(
+        PieceType::ROOK,
+        side,
+        rook_from,
+        rook_to
+    );
 }
 
 tracked_array<Move, MAX_NUM_MOVES> BoardManager::get_legal_moves(const tracked_array<Move, MAX_NUM_MOVES>& moves, bool in_check) {
