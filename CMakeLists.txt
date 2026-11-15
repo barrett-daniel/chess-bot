@@ -1,6 +1,11 @@
 cmake_minimum_required(VERSION 3.21)
 set(CMAKE_POLICY_VERSION_MINIMUM 3.5)
 
+
+set(CMAKE_TOOLCHAIN_FILE "${CMAKE_CURRENT_SOURCE_DIR}/vcpkg/scripts/buildsystems/vcpkg.cmake"
+        CACHE STRING "Vcpkg toolchain file"
+)
+
 project(ChessBot LANGUAGES CXX)
 
 set(CMAKE_CXX_STANDARD 23)
